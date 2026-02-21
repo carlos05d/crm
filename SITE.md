@@ -15,8 +15,8 @@ We are generating UI components for a Next.js (App Router) environment. The styl
 ## 4. Sitemap (Current)
 *   [ ] `landing-page` - The generic marketing page for the SaaS CRM platform (`/app/page.tsx`).
 *   [ ] `tenant-public-form` - The public landing page & lead capture form on a university's subdomain (`/[domain]/page.tsx`).
-*   [ ] `dashboard-super-admin` - The global platform dashboard for managing universities.
-*   [ ] `dashboard-tenant-admin` - The university-specific dashboard for configuration and analytics.
+*   [x] `dashboard-super-admin` - The global platform dashboard for managing universities.
+*   [x] `dashboard-tenant-admin` - The university-specific dashboard for configuration and analytics.
 *   [ ] `dashboard-agent-kanban` - The primary workspace for agents managing student leads.
 *   [x] `login-screen` - The authentication page for internal users.
 

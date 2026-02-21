@@ -10,10 +10,10 @@ export default function DashboardLayout({
                     <div className="font-bold mb-6 tracking-tight flex items-center gap-2">
                         🚀 Platform Dashboard
                     </div>
-                    <a href="#" className="block px-3 py-2 rounded-md hover:bg-muted font-medium text-sm">Overview</a>
+                    <a href="/dashboard" className="block px-3 py-2 rounded-md hover:bg-muted font-medium text-sm">Overview</a>
                     <a href="#" className="block px-3 py-2 rounded-md hover:bg-muted font-medium text-sm">Universities (Super Admin)</a>
                     <a href="#" className="block px-3 py-2 rounded-md hover:bg-muted font-medium text-sm">Leads (Agents)</a>
-                    <a href="#" className="block px-3 py-2 rounded-md hover:bg-muted font-medium text-sm">Settings</a>
+                    <a href="/dashboard/tenant" className="block px-3 py-2 rounded-md hover:bg-muted font-medium text-sm">Tenant Settings</a>
                 </nav>
             </aside>
             <main className="flex-1 p-8">

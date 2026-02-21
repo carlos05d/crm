@@ -43,7 +43,7 @@ export default function SuperAdminDashboard() {
                         <div className="text-2xl font-bold text-slate-900">42</div>
                         <p className="text-xs text-slate-500 mt-1">+2 from last month</p>
                     </CardContent>
-                </CardCard>
+                </Card>
 
                 <Card className="border-[#E5E7EB] shadow-sm rounded-xl bg-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -54,7 +54,7 @@ export default function SuperAdminDashboard() {
                         <div className="text-2xl font-bold text-slate-900">142,300</div>
                         <p className="text-xs text-slate-500 mt-1">+12% from last month</p>
                     </CardContent>
-                </CardCard>
+                </Card>
 
                 <Card className="border-[#E5E7EB] shadow-sm rounded-xl bg-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -65,7 +65,7 @@ export default function SuperAdminDashboard() {
                         <div className="text-2xl font-bold text-slate-900">$284,500</div>
                         <p className="text-xs text-slate-500 mt-1">+4% from last month</p>
                     </CardContent>
-                </CardCard>
+                </Card>
 
                 <Card className="border-[#E5E7EB] shadow-sm rounded-xl bg-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -76,7 +76,7 @@ export default function SuperAdminDashboard() {
                         <div className="text-2xl font-bold text-[#14532D]">99.9%</div>
                         <p className="text-xs text-slate-500 mt-1">All services operational</p>
                     </CardContent>
-                </CardCard>
+                </Card>
             </div>
 
             {/* Data Table Section */}
