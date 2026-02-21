@@ -19,23 +19,49 @@ export default function DashboardLayout({
                     </div>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                    <a href="/dashboard" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
-                        <LayoutDashboard className="h-4 w-4" />
-                        Overview
-                    </a>
-                    <a href="/dashboard/super" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
-                        <Building2 className="h-4 w-4" />
-                        Universities (Super Admin)
-                    </a>
-                    <a href="/dashboard/leads" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
-                        <Users className="h-4 w-4" />
-                        Leads Pipeline (Agents)
-                    </a>
-                    <a href="/dashboard/tenant" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
-                        <Settings className="h-4 w-4" />
-                        Tenant Settings
-                    </a>
+                <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
+
+                    {/* Super Admin Section */}
+                    <div>
+                        <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Super Admin</h3>
+                        <div className="space-y-1">
+                            <a href="/dashboard" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
+                                <LayoutDashboard className="h-4 w-4" />
+                                Platform Overview
+                            </a>
+                            <a href="#" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
+                                <Building2 className="h-4 w-4" />
+                                University Tenants
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* Tenant Admin Section */}
+                    <div>
+                        <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">University Admin</h3>
+                        <div className="space-y-1">
+                            <a href="/dashboard/tenant" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
+                                <Settings className="h-4 w-4" />
+                                Tenant Settings
+                            </a>
+                            <a href="#" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
+                                <Users className="h-4 w-4" />
+                                Staff Management
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* Agent Section */}
+                    <div>
+                        <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Agent Workspace</h3>
+                        <div className="space-y-1">
+                            <a href="/dashboard/leads" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
+                                <Users className="h-4 w-4" />
+                                Leads Pipeline
+                            </a>
+                        </div>
+                    </div>
+
                 </nav>
             </aside>
 

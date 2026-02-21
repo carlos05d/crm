@@ -28,7 +28,7 @@ import { CSS } from "@dnd-kit/utilities"
 
 // Types
 type Stage = { id: string; name: string; color: string }
-type Lead = { id: string; name: string; program: string; stageId: string; date: string; priority: string }
+type Lead = { id: string; name: string; program: string; stageId: string; date: string; priority: string; score: number }
 
 // Mock Data Structure
 const STAGES: Stage[] = [
@@ -40,11 +40,11 @@ const STAGES: Stage[] = [
 ]
 
 const INITIAL_LEADS: Lead[] = [
-    { id: "l1", name: "Emma Thompson", program: "BSc Computer Science", stageId: "s1", date: "2h ago", priority: "High" },
-    { id: "l2", name: "James Wilson", program: "BA Business Admin", stageId: "s1", date: "5h ago", priority: "Normal" },
-    { id: "l3", name: "Sarah Chen", program: "MSc Data Analytics", stageId: "s2", date: "1d ago", priority: "Normal" },
-    { id: "l4", name: "Michael Rodriguez", program: "PhD Physics", stageId: "s3", date: "2d ago", priority: "High" },
-    { id: "l5", name: "Lisa Patel", program: "BSc Nursing", stageId: "s4", date: "3d ago", priority: "Urgent" },
+    { id: "l1", name: "Emma Thompson", program: "BSc Computer Science", stageId: "s1", date: "2h ago", priority: "High", score: 85 },
+    { id: "l2", name: "James Wilson", program: "BA Business Admin", stageId: "s1", date: "5h ago", priority: "Normal", score: 42 },
+    { id: "l3", name: "Sarah Chen", program: "MSc Data Analytics", stageId: "s2", date: "1d ago", priority: "Normal", score: 67 },
+    { id: "l4", name: "Michael Rodriguez", program: "PhD Physics", stageId: "s3", date: "2d ago", priority: "High", score: 92 },
+    { id: "l5", name: "Lisa Patel", program: "BSc Nursing", stageId: "s4", date: "3d ago", priority: "Urgent", score: 98 },
 ]
 
 // --- Sortable Item Component ---
@@ -72,15 +72,20 @@ function SortableLeadCard({ lead }: { lead: Lead }) {
                         <CardTitle className="text-sm font-semibold text-slate-900">{lead.name}</CardTitle>
                         <p className="text-xs font-medium text-[#1E3A8A] mt-0.5">{lead.program}</p>
                     </div>
-                    {lead.priority === "Urgent" || lead.priority === "High" ? (
-                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 border-none ${lead.priority === "Urgent" ? "bg-red-50 text-red-600" : "bg-orange-50 text-orange-600"
-                            }`}>
-                            {lead.priority}
+                    <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-blue-50 text-blue-700 border-blue-200">
+                            Score: {lead.score}
                         </Badge>
-                    ) : null}
+                        {lead.priority === "Urgent" || lead.priority === "High" ? (
+                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 border-none ${lead.priority === "Urgent" ? "bg-red-50 text-red-600" : "bg-orange-50 text-orange-600"
+                                }`}>
+                                {lead.priority}
+                            </Badge>
+                        ) : null}
+                    </div>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
-                    <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center justify-between mt-2 mb-3">
                         <span className="text-[11px] font-medium text-slate-500 flex items-center">
                             {lead.date}
                         </span>
@@ -95,6 +100,11 @@ function SortableLeadCard({ lead }: { lead: Lead }) {
                                 </Button>
                             </div>
                         </div>
+                    </div>
+                    <div onPointerDown={(e) => e.stopPropagation()}>
+                        <Button variant="outline" className="w-full h-7 text-[11px] font-semibold text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-[#1E3A8A] shadow-none">
+                            View Details
+                        </Button>
                     </div>
                 </CardContent>
             </Card>
