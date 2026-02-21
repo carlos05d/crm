@@ -10,7 +10,7 @@ export default function LoginPage() {
             <div className="mb-6 flex justify-center text-center">
                 <div className="inline-flex items-center justify-center p-3 bg-white border border-[#E5E7EB] rounded-2xl shadow-sm">
                     <span className="text-3xl font-extrabold tracking-tight text-[#1E3A8A]">
-                        🏛️ University CRM
+                        University CRM
                     </span>
                 </div>
             </div>

@@ -17,7 +17,7 @@ We are generating UI components for a Next.js (App Router) environment. The styl
 *   [ ] `tenant-public-form` - The public landing page & lead capture form on a university's subdomain (`/[domain]/page.tsx`).
 *   [x] `dashboard-super-admin` - The global platform dashboard for managing universities.
 *   [x] `dashboard-tenant-admin` - The university-specific dashboard for configuration and analytics.
-*   [ ] `dashboard-agent-kanban` - The primary workspace for agents managing student leads.
+*   [x] `dashboard-agent-kanban` - The primary workspace for agents managing student leads.
 *   [x] `login-screen` - The authentication page for internal users.
 
 ## 5. Roadmap (Backlog for Stitch Generation)
