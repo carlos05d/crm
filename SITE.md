@@ -18,7 +18,7 @@ We are generating UI components for a Next.js (App Router) environment. The styl
 *   [ ] `dashboard-super-admin` - The global platform dashboard for managing universities.
 *   [ ] `dashboard-tenant-admin` - The university-specific dashboard for configuration and analytics.
 *   [ ] `dashboard-agent-kanban` - The primary workspace for agents managing student leads.
-*   [ ] `login-screen` - The authentication page for internal users.
+*   [x] `login-screen` - The authentication page for internal users.
 
 ## 5. Roadmap (Backlog for Stitch Generation)
 1. `login-screen` - A clean, trusting sign-in portal.
