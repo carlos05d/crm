@@ -13,12 +13,16 @@ import { Label } from "@/components/ui/label"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog"
-import { Search, Plus, MoreHorizontal, Mail, Building2, Loader2, CheckCircle2, Users } from "lucide-react"
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu"
+import { Search, Plus, MoreHorizontal, Mail, Loader2, CheckCircle2, Users, Pencil, Power, Trash2 } from "lucide-react"
 
 interface Agent {
     user_id: string
     display_name: string
     active: boolean
+    phone: string | null
     university_id: string
     profiles: Array<{ email: string | null }>
     _lead_count?: number
@@ -37,9 +41,16 @@ export default function TenantAgentManagementPage() {
     const [isInviting, setIsInviting] = useState(false)
     const [inviteSuccess, setInviteSuccess] = useState(false)
     const [inviteError, setInviteError] = useState("")
+
+    // Form fields
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
     const [phone, setPhone] = useState("")
+
+    // Edit state
+    const [editDialogOpen, setEditDialogOpen] = useState(false)
+    const [activeAgent, setActiveAgent] = useState<Agent | null>(null)
+    const [actionLoading, setActionLoading] = useState(false)
 
     const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,13 +60,12 @@ export default function TenantAgentManagementPage() {
     const fetchAgents = useCallback(async (uid: string) => {
         const { data: agentsData } = await supabase
             .from("agents")
-            .select("user_id, display_name, active, university_id, profiles(email)")
+            .select("user_id, display_name, active, phone, university_id, profiles(email)")
             .eq("university_id", uid)
             .order("display_name")
 
         if (!agentsData) { setAgents([]); return }
 
-        // Get lead counts for each agent
         const withCounts = await Promise.all(
             agentsData.map(async (agent) => {
                 const { count } = await supabase
@@ -83,7 +93,7 @@ export default function TenantAgentManagementPage() {
             setLoading(false)
         }
         init()
-    }, [fetchAgents])
+    }, [fetchAgents, supabase])
 
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -96,7 +106,6 @@ export default function TenantAgentManagementPage() {
             })
             if (error) throw error
             setInviteSuccess(true)
-            // Refresh agents list after success
             if (universityId) await fetchAgents(universityId)
             setTimeout(() => {
                 setInviteSuccess(false)
@@ -109,6 +118,59 @@ export default function TenantAgentManagementPage() {
         } finally {
             setIsInviting(false)
         }
+    }
+
+    const handleEditSave = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!activeAgent || !name.trim()) return
+        setActionLoading(true)
+
+        const { error } = await supabase
+            .from('agents')
+            .update({ display_name: name.trim(), phone: phone.trim() })
+            .eq('user_id', activeAgent.user_id)
+
+        if (!error) {
+            setAgents(prev => prev.map(a =>
+                a.user_id === activeAgent.user_id
+                    ? { ...a, display_name: name.trim(), phone: phone.trim() }
+                    : a
+            ))
+            setEditDialogOpen(false)
+        }
+        setActionLoading(false)
+    }
+
+    const toggleStatus = async (agent: Agent) => {
+        const newStatus = !agent.active
+        const { error } = await supabase
+            .from('agents')
+            .update({ active: newStatus })
+            .eq('user_id', agent.user_id)
+
+        if (!error) {
+            setAgents(prev => prev.map(a =>
+                a.user_id === agent.user_id ? { ...a, active: newStatus } : a
+            ))
+        }
+    }
+
+    const handleDelete = async (agentId: string) => {
+        if (!confirm("Are you sure? This removes the agent from your university and unassigns their leads.")) return
+
+        // Note: For full cleanup this should ideally call an Edge Function to delete the auth user,
+        // but for now we delete the tenant agent record. Profiles RLS cascade relies on university_id.
+        const { error } = await supabase.from('agents').delete().eq('user_id', agentId)
+        if (!error) {
+            setAgents(prev => prev.filter(a => a.user_id !== agentId))
+        }
+    }
+
+    const openEdit = (agent: Agent) => {
+        setActiveAgent(agent)
+        setName(agent.display_name)
+        setPhone(agent.phone || "")
+        setEditDialogOpen(true)
     }
 
     const filtered = agents.filter(a =>
@@ -133,7 +195,10 @@ export default function TenantAgentManagementPage() {
                             className="pl-8 w-[250px] bg-white rounded-md border-slate-200 focus-visible:ring-primary"
                         />
                     </div>
-                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <Dialog open={dialogOpen} onOpenChange={(open) => {
+                        setDialogOpen(open)
+                        if (open) { setName(""); setEmail(""); setPhone(""); setInviteError("") }
+                    }}>
                         <DialogTrigger asChild>
                             <Button><Plus className="mr-2 h-4 w-4" /> Invite Agent</Button>
                         </DialogTrigger>
@@ -226,19 +291,35 @@ export default function TenantAgentManagementPage() {
                                             <Badge
                                                 variant="secondary"
                                                 className={agent.active
-                                                    ? "bg-emerald-50 text-emerald-700 border-none"
-                                                    : "bg-slate-100 text-slate-500 border-none"}
+                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200/50"
+                                                    : "bg-slate-100 text-slate-500 border-slate-200"}
                                             >
-                                                {agent.active ? "Active" : "Inactive"}
+                                                {agent.active ? "Active" : "Suspended"}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <span className="font-medium text-slate-900">{agent._lead_count}</span>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => openEdit(agent)}>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => toggleStatus(agent)}>
+                                                        <Power className="mr-2 h-4 w-4" /> {agent.active ? "Suspend Agent" : "Activate Agent"}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => handleDelete(agent.user_id)}>
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Remove Team Member
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -247,6 +328,41 @@ export default function TenantAgentManagementPage() {
                     )}
                 </CardContent>
             </Card>
+
+            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Agent Details</DialogTitle>
+                        <DialogDescription>Update contact information for {activeAgent?.display_name}.</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleEditSave} className="space-y-4 pt-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="editName">Full Name</Label>
+                            <Input
+                                id="editName"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="editPhone">Phone Number</Label>
+                            <Input
+                                id="editPhone"
+                                value={phone}
+                                onChange={e => setPhone(e.target.value)}
+                                placeholder="+1 (555) 000-0000"
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+                            <Button type="submit" disabled={actionLoading}>
+                                {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Changes
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

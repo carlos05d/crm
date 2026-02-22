@@ -50,12 +50,15 @@ export default function ProgramsPage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!universityId || !newName) return
+        if (!universityId || !newName.trim()) return
         setSaving(true)
+
+        const deptId = newDeptId === "unassigned" || !newDeptId ? null : newDeptId
+
         const { error } = await supabase.from("programs").insert({
             university_id: universityId,
-            name: newName,
-            department_id: newDeptId || null,
+            name: newName.trim(),
+            department_id: deptId,
         })
         if (!error) {
             setNewName("")
@@ -99,6 +102,7 @@ export default function ProgramsPage() {
                                     <Select value={newDeptId} onValueChange={setNewDeptId}>
                                         <SelectTrigger><SelectValue placeholder="Select department..." /></SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="unassigned">No Department</SelectItem>
                                             {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>

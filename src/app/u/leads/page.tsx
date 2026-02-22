@@ -151,7 +151,7 @@ export default function TenantLeadsPage() {
                                     <Select onValueChange={val => setValue("assigned_agent_id", val)}>
                                         <SelectTrigger><SelectValue placeholder="No agent assigned" /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">No assignment</SelectItem>
+                                            <SelectItem value="unassigned">No assignment</SelectItem>
                                             {agents.map(a => <SelectItem key={a.user_id} value={a.user_id}>{a.display_name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
@@ -229,14 +229,14 @@ export default function TenantLeadsPage() {
                                         </td>
                                         <td className="px-4 py-3">
                                             <Select
-                                                value={lead.assigned_agent_id || ""}
-                                                onValueChange={val => handleAssign(lead.id, val)}
+                                                value={lead.assigned_agent_id || "unassigned"}
+                                                onValueChange={val => handleAssign(lead.id, val === "unassigned" ? "" : val)}
                                             >
                                                 <SelectTrigger className="h-8 text-xs w-40">
                                                     <SelectValue placeholder="Unassigned" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="">Unassigned</SelectItem>
+                                                    <SelectItem value="unassigned">Unassigned</SelectItem>
                                                     {agents.map(a => <SelectItem key={a.user_id} value={a.user_id}>{a.display_name}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
