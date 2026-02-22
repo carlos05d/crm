@@ -3,44 +3,80 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { z } from 'zod'
+
+const authSchema = z.object({
+    email: z.string().email("Please enter a valid email address."),
+    password: z.string().min(6, "Password must be at least 6 characters long."),
+})
 
 export async function login(formData: FormData) {
     const supabase = await createClient()
 
-    // type-casting here for convenience
-    // in practice, you should validate your inputs
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
+    const result = authSchema.safeParse(Object.fromEntries(formData.entries()))
+    if (!result.success) {
+        redirect(`/login?error=${result.error.issues[0].message}`)
+    }
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { email, password } = result.data
+
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
     })
 
-    if (error) {
-        redirect('/login?error=Could not authenticate user')
+    if (authError || !authData.user) {
+        redirect('/login?error=Invalid login credentials')
     }
 
+    // Determine user role for routing
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', authData.user.id)
+        .single()
+
     revalidatePath('/', 'layout')
-    redirect('/dashboard') // Redirect to Super Admin view by default for now
+
+    // Route based on role
+    if (profile?.role === 'super_admin') {
+        redirect('/dashboard')
+    } else if (profile?.role === 'university_admin') {
+        redirect('/dashboard/tenant')
+    } else if (profile?.role === 'agent') {
+        redirect('/dashboard/leads')
+    } else {
+        // Fallback if no profile exists yet
+        redirect('/dashboard')
+    }
 }
 
 export async function signup(formData: FormData) {
     const supabase = await createClient()
 
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
+    const result = authSchema.safeParse(Object.fromEntries(formData.entries()))
+    if (!result.success) {
+        redirect(`/login?error=${result.error.issues[0].message}`)
+    }
 
-    const { error } = await supabase.auth.signUp({
+    const { email, password } = result.data
+
+    const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
     })
 
-    if (error) {
-        redirect('/login?error=Could not create user: ' + error.message)
+    if (authError || !authData.user) {
+        redirect('/login?error=Could not create user account: ' + authError?.message)
     }
 
+    // Auto-create a super_admin profile for this newly signed up user for demo purposes
+    await supabase.from('profiles').insert({
+        id: authData.user.id,
+        email: email,
+        role: 'super_admin'
+    })
+
     revalidatePath('/', 'layout')
-    // We send them to dashboard assuming auto-confirm is enabled in Supabase or it's just a demo
     redirect('/dashboard')
 }
