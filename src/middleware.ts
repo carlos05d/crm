@@ -9,9 +9,14 @@ export async function middleware(request: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
             cookies: {
-                getAll() { return request.cookies.getAll() },
+                getAll() {
+                    return request.cookies.getAll()
+                },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+                    // Must set on both request AND response for proper SSR session propagation
+                    cookiesToSet.forEach(({ name, value }) =>
+                        request.cookies.set(name, value)
+                    )
                     supabaseResponse = NextResponse.next({ request })
                     cookiesToSet.forEach(({ name, value, options }) =>
                         supabaseResponse.cookies.set(name, value, options)
@@ -21,11 +26,13 @@ export async function middleware(request: NextRequest) {
         }
     )
 
+    // IMPORTANT: Do not add logic between createServerClient and getUser.
+    // A simple mistake could be very hard to debug.
     const { data: { user } } = await supabase.auth.getUser()
+
     const path = request.nextUrl.pathname
 
-    // Public paths that never need guarding (login, forms, static)
-    const isLoginPath = path === '/login' || path.startsWith('/(auth)')
+    const isLoginPath = path === '/login'
     const isFormsPath = path.startsWith('/forms')
     const isRootPath = path === '/'
 
@@ -34,19 +41,22 @@ export async function middleware(request: NextRequest) {
     const isAgentRoute = path.startsWith('/agent')
     const isProtectedRoute = isSuperAdminRoute || isUniversityAdminRoute || isAgentRoute
 
-    // ── Not logged in ────────────────────────────────────────────────────────
-    // Allow: login, forms, root (which shows login page)
+    // ── Not logged in ──────────────────────────────────────────────────────────
     if (!user) {
         if (isProtectedRoute) {
             const url = request.nextUrl.clone()
             url.pathname = '/login'
-            return NextResponse.redirect(url)
+            // IMPORTANT: must use supabaseResponse-derived response to preserve cookies
+            const redirectResponse = NextResponse.redirect(url)
+            supabaseResponse.cookies.getAll().forEach(cookie => {
+                redirectResponse.cookies.set(cookie.name, cookie.value)
+            })
+            return redirectResponse
         }
-        // Let them through to root/login/forms
         return supabaseResponse
     }
 
-    // ── Logged in ─────────────────────────────────────────────────────────-─
+    // ── Logged in — fetch role ──────────────────────────────────────────────────
     const { data: profile } = await supabase
         .from('profiles')
         .select('role')
@@ -55,49 +65,56 @@ export async function middleware(request: NextRequest) {
 
     const role = profile?.role as string | undefined
 
-    // If profile not yet created (first login edge case), skip role redirect
-    // to avoid loop — let login action handle it
+    // No profile yet — send to login, not loop
     if (!role) {
-        // Only redirect away from protected routes; let them reach login
         if (isProtectedRoute) {
             const url = request.nextUrl.clone()
             url.pathname = '/login'
-            return NextResponse.redirect(url)
+            const redirectResponse = NextResponse.redirect(url)
+            supabaseResponse.cookies.getAll().forEach(cookie => {
+                redirectResponse.cookies.set(cookie.name, cookie.value)
+            })
+            return redirectResponse
         }
         return supabaseResponse
     }
 
-    // Enforce strict route<->role boundaries
+    // ── Role boundary enforcement ─────────────────────────────────────────────
     if (isSuperAdminRoute && role !== 'super_admin') {
-        return redirectToDashboard(role, request.nextUrl)
+        return redirectToDashboard(role, request, supabaseResponse)
     }
     if (isUniversityAdminRoute && role !== 'university_admin') {
-        return redirectToDashboard(role, request.nextUrl)
+        return redirectToDashboard(role, request, supabaseResponse)
     }
     if (isAgentRoute && role !== 'agent') {
-        return redirectToDashboard(role, request.nextUrl)
+        return redirectToDashboard(role, request, supabaseResponse)
     }
 
-    // Auto-redirect logged-in users away from root & login
+    // ── Logged-in users visiting root or login → bounce to their dashboard ────
     if (isRootPath || isLoginPath) {
-        return redirectToDashboard(role, request.nextUrl)
+        return redirectToDashboard(role, request, supabaseResponse)
     }
 
     return supabaseResponse
 }
 
-function redirectToDashboard(role: string, url: URL) {
-    const redirectUrl = url.clone()
+function redirectToDashboard(role: string, request: NextRequest, supabaseResponse: NextResponse) {
+    const url = request.nextUrl.clone()
     if (role === 'super_admin') {
-        redirectUrl.pathname = '/sa/dashboard'
+        url.pathname = '/sa/dashboard'
     } else if (role === 'university_admin') {
-        redirectUrl.pathname = '/u/dashboard'
+        url.pathname = '/u/dashboard'
     } else if (role === 'agent') {
-        redirectUrl.pathname = '/agent/dashboard'
+        url.pathname = '/agent/dashboard'
     } else {
-        redirectUrl.pathname = '/login'
+        url.pathname = '/login'
     }
-    return NextResponse.redirect(redirectUrl)
+    const redirectResponse = NextResponse.redirect(url)
+    // Forward session cookies to keep the user logged in across the redirect
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+        redirectResponse.cookies.set(cookie.name, cookie.value)
+    })
+    return redirectResponse
 }
 
 export const config = {

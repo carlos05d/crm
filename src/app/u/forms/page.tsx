@@ -131,7 +131,7 @@ export default function TenantFormsManagementPage() {
                                 </div>
                                 <DialogFooter>
                                     <Button type="submit" disabled={isSaving}>
-                                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
                                         Save & Publish
                                     </Button>
                                 </DialogFooter>

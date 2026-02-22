@@ -3,85 +3,82 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter }
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Building2, Save, Send } from 'lucide-react'
+import { Building2, Send } from 'lucide-react'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-export default async function PublicFormPage({ params }: { params: { universitySlug: string, formSlug: string } }) {
+export default async function PublicFormPage({ params }: { params: Promise<{ universitySlug: string; formSlug: string }> }) {
+    const { universitySlug, formSlug } = await params
+    const cookieStore = await cookies()
 
-    const cookieStore = cookies()
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
             cookies: {
-                getAll() {
-                    return cookieStore.getAll()
-                },
-                setAll(cookiesToSet) {
-                    // Static read-only for SSR forms
-                },
+                getAll() { return cookieStore.getAll() },
+                setAll() { /* read-only SSR page */ },
             },
         }
     )
 
-    // 1. Fetch University ID via subdomain / slug
+    // 1. Fetch University via subdomain slug
     const { data: university } = await supabase
         .from('universities')
         .select('id, name, branding_json')
-        .eq('subdomain', params.universitySlug)
+        .eq('subdomain', universitySlug)
         .single()
 
     if (!university) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50"><p className="text-xl text-slate-500 font-medium">404 - University Not Found</p></div>
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <p className="text-xl text-slate-500 font-medium">404 – University Not Found</p>
+        </div>
     )
 
-    // 2. Fetch the matched Form definition
+    // 2. Fetch the active form
     const { data: form } = await supabase
         .from('forms')
         .select('*')
         .eq('university_id', university.id)
-        .eq('slug', params.formSlug)
+        .eq('slug', formSlug)
         .eq('active', true)
         .single()
 
     if (!form) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50"><p className="text-xl text-slate-500 font-medium">404 - Form is inactive or not found</p></div>
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <p className="text-xl text-slate-500 font-medium">404 – Form is inactive or not found</p>
+        </div>
     )
 
-    // Extract basic branding from the JSON if available
-    const primaryColor = university.branding_json?.colors?.primary || "#1E3A5F"
+    const primaryColor: string = (university.branding_json as Record<string, Record<string, string>> | null)?.colors?.primary ?? "#1E3A5F"
 
     async function submitLead(formData: FormData) {
         'use server'
-
         const firstName = formData.get('first_name') as string
         const lastName = formData.get('last_name') as string
         const email = formData.get('email') as string
         const phone = formData.get('phone') as string
 
-        const cookieStore = cookies()
-        const supabaseAdmin = createServerClient(
+        const cs = await cookies()
+        const supabaseServer = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!,
+            process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             {
-                cookies: { getAll() { return cookieStore.getAll() }, setAll() { } },
+                cookies: { getAll() { return cs.getAll() }, setAll() { } },
             }
         )
 
-        const { error } = await supabaseAdmin.from('leads').insert({
+        await supabaseServer.from('leads').insert({
             university_id: university?.id,
             first_name: firstName,
             last_name: lastName,
-            email: email,
-            phone: phone,
-            source: `Form: ${form?.title}`
+            email,
+            phone: phone || null,
+            source: `Form: ${form?.slug}`,
         })
 
-        if (!error) {
-            redirect(`/forms/${params.universitySlug}/${params.formSlug}?success=true`)
-        }
+        redirect(`/forms/${universitySlug}/${formSlug}?success=true`)
     }
 
     return (
@@ -92,7 +89,7 @@ export default async function PublicFormPage({ params }: { params: { universityS
                         <Building2 className="h-8 w-8" style={{ color: primaryColor }} />
                     </div>
                     <CardTitle className="text-3xl font-heading font-bold text-slate-900">{university.name}</CardTitle>
-                    <CardDescription className="text-base mt-2 whitespace-pre-wrap">{form.title}</CardDescription>
+                    <CardDescription className="text-base mt-2">{form.title ?? form.name}</CardDescription>
                 </CardHeader>
 
                 <CardContent>
@@ -107,24 +104,21 @@ export default async function PublicFormPage({ params }: { params: { universityS
                                 <Input id="last_name" name="last_name" required placeholder="Doe" />
                             </div>
                         </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="email">Email Address</Label>
                             <Input id="email" name="email" type="email" required placeholder="jane@example.com" />
                         </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="phone">Phone Number (Optional)</Label>
                             <Input id="phone" name="phone" type="tel" placeholder="+1 (555) 000-0000" />
                         </div>
-
                         <Button type="submit" className="w-full text-white font-medium py-6 mt-4" style={{ backgroundColor: primaryColor }}>
                             <Send className="mr-2 h-4 w-4" /> Submit Application
                         </Button>
                     </form>
                 </CardContent>
                 <CardFooter className="justify-center pt-2 pb-8">
-                    <p className="text-xs text-slate-400">Powered by CRM Platform Infrastructure.</p>
+                    <p className="text-xs text-slate-400">Powered by University CRM Platform.</p>
                 </CardFooter>
             </Card>
         </div>

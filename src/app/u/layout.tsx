@@ -11,7 +11,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { createBrowserClient } from '@supabase/ssr'
 import {
-    LayoutDashboard, Users, KanbanSquare, Globe, BookOpen, MessageSquare, Settings, FileText, LogOut, Activity, GraduationCap, Palette
+    LayoutDashboard, Users, KanbanSquare, Globe, BookOpen, MessageSquare, FileText, LogOut, Activity, GraduationCap, Palette
 } from 'lucide-react'
 
 const navItems = [
@@ -51,10 +51,45 @@ const navItems = [
 export default function TenantAdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const [user, setUser] = useState<any>(null)
+    const [uniName, setUniName] = useState<string>("Tenant Admin")
+    const [logoUrl, setLogoUrl] = useState<string | null>(null)
+    const [logoSize, setLogoSize] = useState<number>(40)
+    const [logoPosition, setLogoPosition] = useState<"left" | "center">("left")
     const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
     useEffect(() => {
-        supabase.auth.getUser().then(({ data }) => setUser(data.user))
+        const init = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+            setUser(user)
+
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("university_id")
+                .eq("id", user.id)
+                .single()
+
+            if (!profile?.university_id) return
+
+            // Fetch university name
+            const { data: uni } = await supabase
+                .from("universities")
+                .select("name")
+                .eq("id", profile.university_id)
+                .single()
+            if (uni?.name) setUniName(uni.name)
+
+            // Fetch logo from settings.branding
+            const { data: settings } = await supabase
+                .from("settings")
+                .select("branding")
+                .eq("university_id", profile.university_id)
+                .single()
+            if (settings?.branding?.logo_url) setLogoUrl(settings.branding.logo_url)
+            if (settings?.branding?.logo_size) setLogoSize(settings.branding.logo_size)
+            if (settings?.branding?.logo_position) setLogoPosition(settings.branding.logo_position)
+        }
+        init()
     }, [])
 
     const handleSignOut = async () => {
@@ -66,11 +101,25 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
         <div className="flex min-h-screen bg-slate-50 font-sans">
             <aside className="fixed inset-y-0 left-0 z-20 w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
                 <div className="h-16 flex items-center px-5 border-b border-slate-200 shrink-0">
-                    <div className="flex items-center gap-2 font-heading font-bold text-lg text-slate-900 tracking-tight truncate">
-                        <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center shadow-sm shrink-0">
-                            <span className="text-white text-base font-black">U</span>
-                        </div>
-                        <span className="truncate">Tenant Admin</span>
+                    <div className={`flex items-center gap-2 min-w-0 ${logoPosition === "center" ? "justify-center" : "justify-start"}`}>
+                        {logoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                                src={logoUrl}
+                                alt={uniName}
+                                style={{ height: logoSize, width: "auto", maxWidth: 140 }}
+                                className="object-contain shrink-0"
+                            />
+                        ) : (
+                            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center shadow-sm shrink-0">
+                                <span className="text-white text-base font-black">
+                                    {uniName.charAt(0).toUpperCase()}
+                                </span>
+                            </div>
+                        )}
+                        <span className="font-heading font-bold text-sm text-slate-900 tracking-tight truncate">
+                            {uniName}
+                        </span>
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto py-5 px-3 space-y-5">
