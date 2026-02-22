@@ -3,8 +3,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
+import { login, signup } from "./actions"
 
-export default function LoginPage() {
+export default async function LoginPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ error?: string }>
+}) {
+    const { error } = await searchParams;
+
     return (
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
             <div className="mb-8 flex justify-center text-center">
@@ -21,36 +28,52 @@ export default function LoginPage() {
                     <p className="text-sm text-slate-500 font-medium">
                         Enter your credentials to access your workspace
                     </p>
+                    {error && (
+                        <div className="p-3 mt-3 text-sm text-red-600 bg-red-50 rounded-md border border-red-200">
+                            {error}
+                        </div>
+                    )}
                 </CardHeader>
                 <CardContent className="space-y-5">
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="text-sm font-semibold text-slate-700">Work Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="name@university.edu"
-                                className="border-[#E5E7EB] focus-visible:ring-[#3B82F6] h-11 transition-all"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="password" className="text-sm font-semibold text-slate-700">Password</Label>
-                                <a href="#" className="text-xs font-semibold text-[#1E3A8A] hover:text-[#14532D] hover:underline transition-colors">
-                                    Forgot password?
-                                </a>
+                    <form>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="email" className="text-sm font-semibold text-slate-700">Work Email</Label>
+                                <Input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    placeholder="name@university.edu"
+                                    className="border-[#E5E7EB] focus-visible:ring-[#3B82F6] h-11 transition-all"
+                                    required
+                                />
                             </div>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="••••••••"
-                                className="border-[#E5E7EB] focus-visible:ring-[#3B82F6] h-11 transition-all"
-                            />
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="password" className="text-sm font-semibold text-slate-700">Password</Label>
+                                    <a href="#" className="text-xs font-semibold text-[#1E3A8A] hover:text-[#14532D] hover:underline transition-colors">
+                                        Forgot password?
+                                    </a>
+                                </div>
+                                <Input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    className="border-[#E5E7EB] focus-visible:ring-[#3B82F6] h-11 transition-all"
+                                    required
+                                />
+                            </div>
                         </div>
-                    </div>
-                    <Button className="w-full h-11 bg-[#1E3A8A] hover:bg-[#14532D] text-white font-semibold text-sm transition-colors shadow-sm">
-                        Sign in to account
-                    </Button>
+                        <div className="flex flex-col gap-3 mt-6">
+                            <Button formAction={login} className="w-full h-11 bg-[#1E3A8A] hover:bg-[#14532D] text-white font-semibold text-sm transition-colors shadow-sm">
+                                Sign in to account
+                            </Button>
+                            <Button formAction={signup} variant="outline" className="w-full h-11 border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-colors">
+                                Create new demo account
+                            </Button>
+                        </div>
+                    </form>
                     <div className="relative my-4">
                         <div className="absolute inset-0 flex items-center">
                             <span className="w-full border-t border-slate-200" />
