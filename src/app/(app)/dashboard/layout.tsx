@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Building2, LayoutDashboard, Settings, Users, LogOut } from "lucide-react"
+import Link from "next/link"
 
 export default function DashboardLayout({
     children,
@@ -25,14 +26,14 @@ export default function DashboardLayout({
                     <div>
                         <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Super Admin</h3>
                         <div className="space-y-1">
-                            <a href="/dashboard" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
+                            <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors">
                                 <LayoutDashboard className="h-4 w-4" />
                                 Platform Overview
-                            </a>
-                            <a href="#" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
+                            </Link>
+                            <Link href="#" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors">
                                 <Building2 className="h-4 w-4" />
                                 University Tenants
-                            </a>
+                            </Link>
                         </div>
                     </div>
 
@@ -40,14 +41,14 @@ export default function DashboardLayout({
                     <div>
                         <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">University Admin</h3>
                         <div className="space-y-1">
-                            <a href="/dashboard/tenant" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
+                            <Link href="/dashboard/tenant" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors">
                                 <Settings className="h-4 w-4" />
                                 Tenant Settings
-                            </a>
-                            <a href="#" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
+                            </Link>
+                            <Link href="#" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors">
                                 <Users className="h-4 w-4" />
                                 Staff Management
-                            </a>
+                            </Link>
                         </div>
                     </div>
 
@@ -55,10 +56,10 @@ export default function DashboardLayout({
                     <div>
                         <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Agent Workspace</h3>
                         <div className="space-y-1">
-                            <a href="/dashboard/leads" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors border-l-4 border-transparent hover:border-[#1E3A8A]">
+                            <Link href="/dashboard/leads" className="flex items-center gap-3 px-3 py-2 text-slate-700 rounded-md hover:bg-slate-50 hover:text-[#1E3A8A] font-medium text-sm transition-colors">
                                 <Users className="h-4 w-4" />
                                 Leads Pipeline
-                            </a>
+                            </Link>
                         </div>
                     </div>
 
@@ -92,18 +93,24 @@ export default function DashboardLayout({
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator className="bg-[#E5E7EB]" />
-                                <DropdownMenuItem className="cursor-pointer text-slate-700 flex items-center">
-                                    <Users className="mr-2 h-4 w-4" />
-                                    <span>My Profile</span>
+                                <DropdownMenuItem asChild className="cursor-pointer text-slate-700 focus:bg-slate-50 focus:text-[#1E3A8A]">
+                                    <Link href="/dashboard/profile" className="flex items-center w-full">
+                                        <Users className="mr-2 h-4 w-4" />
+                                        <span>My Profile</span>
+                                    </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer text-slate-700 flex items-center">
-                                    <Settings className="mr-2 h-4 w-4" />
-                                    <span>Account Settings</span>
+                                <DropdownMenuItem asChild className="cursor-pointer text-slate-700 focus:bg-slate-50 focus:text-[#1E3A8A]">
+                                    <Link href="/dashboard/settings" className="flex items-center w-full">
+                                        <Settings className="mr-2 h-4 w-4" />
+                                        <span>Account Settings</span>
+                                    </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator className="bg-[#E5E7EB]" />
-                                <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-700 flex items-center">
-                                    <LogOut className="mr-2 h-4 w-4" />
-                                    <span>Log out</span>
+                                <DropdownMenuItem asChild className="cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50">
+                                    <Link href="/login" className="flex items-center w-full">
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        <span>Log out</span>
+                                    </Link>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
