@@ -70,7 +70,7 @@ function SortableLeadCard({ lead }: { lead: Lead }) {
                 <CardHeader className="p-3 pb-2 space-y-0 flex flex-row items-start justify-between">
                     <div>
                         <CardTitle className="text-sm font-semibold text-slate-900">{lead.name}</CardTitle>
-                        <p className="text-xs font-medium text-[#1E3A8A] mt-0.5">{lead.program}</p>
+                        <p className="text-xs font-medium text-primary mt-0.5">{lead.program}</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-blue-50 text-blue-700 border-blue-200">
@@ -90,19 +90,18 @@ function SortableLeadCard({ lead }: { lead: Lead }) {
                             {lead.date}
                         </span>
                         <div className="flex items-center space-x-1">
-                            {/* Prevent drag events on buttons by consuming the pointer events */}
                             <div onPointerDown={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-[#1E3A8A] hover:bg-slate-100">
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-primary hover:bg-slate-100">
                                     <Mail className="h-3.5 w-3.5" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-[#1E3A8A] hover:bg-slate-100">
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-primary hover:bg-slate-100">
                                     <Phone className="h-3.5 w-3.5" />
                                 </Button>
                             </div>
                         </div>
                     </div>
                     <div onPointerDown={(e) => e.stopPropagation()}>
-                        <Button variant="outline" className="w-full h-7 text-[11px] font-semibold text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-[#1E3A8A] shadow-none">
+                        <Button variant="outline" className="w-full h-7 text-[11px] font-semibold text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-primary shadow-none">
                             View Details
                         </Button>
                     </div>
@@ -249,7 +248,7 @@ export default function LeadsPipelineDashboard() {
             {/* Header section */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-slate-900">Leads Pipeline</h2>
+                    <h2 className="text-3xl font-heading font-bold tracking-tight text-slate-900">Leads Pipeline</h2>
                     <p className="text-slate-500 mt-1">Manage prospective students through the admissions funnel.</p>
                 </div>
 
@@ -265,7 +264,7 @@ export default function LeadsPipelineDashboard() {
                     <Button variant="outline" className="text-slate-700 border-slate-300 hidden sm:flex">
                         <Filter className="mr-2 h-4 w-4" /> Filter
                     </Button>
-                    <Button className="bg-[#1E3A8A] hover:bg-[#14532D] text-white">
+                    <Button variant="default">
                         <Plus className="mr-2 h-4 w-4" /> Add Lead
                     </Button>
                 </div>

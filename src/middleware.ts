@@ -1,56 +1,107 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { updateSession } from '@/utils/supabase/middleware'
+import { createServerClient } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
-    // 1. Run the Supabase session update to persist auth state
-    const response = await updateSession(request)
+    let supabaseResponse = NextResponse.next({ request })
 
-    const url = request.nextUrl
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return request.cookies.getAll() },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+                    supabaseResponse = NextResponse.next({ request })
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        supabaseResponse.cookies.set(name, value, options)
+                    )
+                },
+            },
+        }
+    )
 
-    // Get hostname of request (e.g. harvard.platform.com, platform.com, localhost:3000)
-    let hostname = request.headers
-        .get('host')!
-        .replace('.localhost:3000', `.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`)
+    const { data: { user } } = await supabase.auth.getUser()
+    const path = request.nextUrl.pathname
 
-    // Extract the subdomain (remove root domain)
-    // Example: harvard.platform.com -> harvard
-    const currentHost =
-        process.env.NODE_ENV === 'production' && process.env.VERCEL === '1'
-            ? hostname.replace(`.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`, '')
-            : hostname.replace(`.localhost:3000`, '')
+    // Public paths that never need guarding (login, forms, static)
+    const isLoginPath = path === '/login' || path.startsWith('/(auth)')
+    const isFormsPath = path.startsWith('/forms')
+    const isRootPath = path === '/'
 
-    const searchParams = request.nextUrl.searchParams.toString()
-    const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ''
-        }`
+    const isSuperAdminRoute = path.startsWith('/sa')
+    const isUniversityAdminRoute = path.startsWith('/u')
+    const isAgentRoute = path.startsWith('/agent')
+    const isProtectedRoute = isSuperAdminRoute || isUniversityAdminRoute || isAgentRoute
 
-    // 2. Rewrite for app routes (the global dashboard for Agents/Admins)
-    if (currentHost === 'app') {
-        return NextResponse.rewrite(new URL(`/app${path === '/' ? '' : path}`, request.url))
+    // ── Not logged in ────────────────────────────────────────────────────────
+    // Allow: login, forms, root (which shows login page)
+    if (!user) {
+        if (isProtectedRoute) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/login'
+            return NextResponse.redirect(url)
+        }
+        // Let them through to root/login/forms
+        return supabaseResponse
     }
 
-    // 3. Rewrite for subdomains (tenant public pages like forms)
-    // If the host is not the root domain and isn't 'app'
-    if (
-        hostname !== 'localhost:3000' &&
-        hostname !== process.env.NEXT_PUBLIC_ROOT_DOMAIN &&
-        currentHost !== 'app'
-    ) {
-        return NextResponse.rewrite(new URL(`/${currentHost}${path}`, request.url))
+    // ── Logged in ─────────────────────────────────────────────────────────-─
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+    const role = profile?.role as string | undefined
+
+    // If profile not yet created (first login edge case), skip role redirect
+    // to avoid loop — let login action handle it
+    if (!role) {
+        // Only redirect away from protected routes; let them reach login
+        if (isProtectedRoute) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/login'
+            return NextResponse.redirect(url)
+        }
+        return supabaseResponse
     }
 
-    // 4. Root domain routes (Marketing page / Login)
-    return response
+    // Enforce strict route<->role boundaries
+    if (isSuperAdminRoute && role !== 'super_admin') {
+        return redirectToDashboard(role, request.nextUrl)
+    }
+    if (isUniversityAdminRoute && role !== 'university_admin') {
+        return redirectToDashboard(role, request.nextUrl)
+    }
+    if (isAgentRoute && role !== 'agent') {
+        return redirectToDashboard(role, request.nextUrl)
+    }
+
+    // Auto-redirect logged-in users away from root & login
+    if (isRootPath || isLoginPath) {
+        return redirectToDashboard(role, request.nextUrl)
+    }
+
+    return supabaseResponse
+}
+
+function redirectToDashboard(role: string, url: URL) {
+    const redirectUrl = url.clone()
+    if (role === 'super_admin') {
+        redirectUrl.pathname = '/sa/dashboard'
+    } else if (role === 'university_admin') {
+        redirectUrl.pathname = '/u/dashboard'
+    } else if (role === 'agent') {
+        redirectUrl.pathname = '/agent/dashboard'
+    } else {
+        redirectUrl.pathname = '/login'
+    }
+    return NextResponse.redirect(redirectUrl)
 }
 
 export const config = {
     matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * Feel free to modify this pattern to include more paths.
-         */
         '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
 }

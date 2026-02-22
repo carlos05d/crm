@@ -38,16 +38,16 @@ export async function login(formData: FormData) {
 
     revalidatePath('/', 'layout')
 
-    // Route based on role
+    // Route based on role — strict interface isolation
     if (profile?.role === 'super_admin') {
-        redirect('/dashboard')
+        redirect('/sa/dashboard')
     } else if (profile?.role === 'university_admin') {
-        redirect('/dashboard/tenant')
+        redirect('/u/dashboard')
     } else if (profile?.role === 'agent') {
-        redirect('/dashboard/leads')
+        redirect('/agent/dashboard')
     } else {
-        // Fallback if no profile exists yet
-        redirect('/dashboard')
+        // Fallback if no profile exists yet (e.g. newly signed up super_admin)
+        redirect('/sa/dashboard')
     }
 }
 
@@ -78,5 +78,5 @@ export async function signup(formData: FormData) {
     })
 
     revalidatePath('/', 'layout')
-    redirect('/dashboard')
+    redirect('/sa/dashboard')
 }

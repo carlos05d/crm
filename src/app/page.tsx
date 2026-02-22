@@ -10,21 +10,21 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-[#1E3A8A] rounded-lg flex items-center justify-center">
+            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
               <GraduationCap className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-[#1E3A8A]">UniversityApp</span>
+            <span className="text-xl font-bold tracking-tight text-primary">UniversityApp</span>
           </div>
           <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-600">
-            <a href="#features" className="hover:text-[#1E3A8A] transition-colors">Features</a>
-            <a href="#solutions" className="hover:text-[#1E3A8A] transition-colors">Solutions</a>
-            <a href="#pricing" className="hover:text-[#1E3A8A] transition-colors">Pricing</a>
+            <a href="#features" className="hover:text-primary transition-colors">Features</a>
+            <a href="#solutions" className="hover:text-primary transition-colors">Solutions</a>
+            <a href="#pricing" className="hover:text-primary transition-colors">Pricing</a>
           </div>
           <div className="flex items-center space-x-4">
-            <Link href="/login" className="text-sm font-semibold text-slate-600 hover:text-[#1E3A8A] transition-colors">
+            <Link href="/login" className="text-sm font-semibold text-slate-600 hover:text-primary transition-colors">
               Sign In
             </Link>
-            <Button className="bg-[#1E3A8A] hover:bg-[#14532D] text-white shadow-sm transition-all text-sm h-9 px-4 hidden sm:flex">
+            <Button variant="default" className="shadow-sm transition-all text-sm h-9 px-4 hidden sm:flex">
               Book a Demo
             </Button>
           </div>
@@ -41,15 +41,15 @@ export default function LandingPage() {
             <span className="flex h-2 w-2 rounded-full bg-blue-600 mr-2"></span>
             The #1 CRM for Global Universities
           </div>
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
-            Transform your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1E3A8A] to-[#3B82F6]">admissions</span> pipeline.
+          <h1 className="text-5xl md:text-7xl font-heading font-extrabold tracking-tight text-slate-900 leading-[1.1]">
+            Transform your <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-500">admissions</span> pipeline.
           </h1>
           <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
             Empower your agents, organize leads in beautiful Kanban boards, and increase enrollment conversion rates across all your campuses.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Button className="w-full sm:w-auto h-14 px-8 bg-[#1E3A8A] hover:bg-[#14532D] text-white text-lg font-semibold shadow-xl hover:shadow-2xl transition-all group">
+            <Button className="w-full sm:w-auto h-14 px-8 bg-primary hover:bg-[#152a45] text-white text-lg font-semibold shadow-xl hover:shadow-2xl transition-all group">
               <Link href="/login" className="flex items-center">
                 Start your free trial
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -90,8 +90,8 @@ export default function LandingPage() {
       <section id="features" className="py-24 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-slate-900">
-              Everything you need to <span className="text-[#1E3A8A]">scale enrollments</span>
+            <h2 className="text-3xl md:text-5xl font-heading font-bold tracking-tight text-slate-900">
+              Everything you need to <span className="text-primary">scale enrollments</span>
             </h2>
             <p className="text-lg text-slate-600 max-w-2xl mx-auto">
               Built specifically for the complexities of modern higher education institutions.
@@ -102,7 +102,7 @@ export default function LandingPage() {
             {/* Feature 1 */}
             <div className="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-all">
               <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
-                <Building2 className="h-7 w-7 text-[#1E3A8A]" />
+                <Building2 className="h-7 w-7 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">Multi-Tenant Architecture</h3>
               <p className="text-slate-600 leading-relaxed">
@@ -113,7 +113,7 @@ export default function LandingPage() {
             {/* Feature 2 */}
             <div className="p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-all">
               <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-                <Users className="h-7 w-7 text-[#14532D]" />
+                <Users className="h-7 w-7 text-emerald-800" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">Agent Kanban Pipelines</h3>
               <p className="text-slate-600 leading-relaxed">
@@ -136,10 +136,10 @@ export default function LandingPage() {
       </section>
 
       {/* Trust Section */}
-      <section className="py-24 bg-[#1E3A8A] text-white">
+      <section className="py-24 bg-primary text-white">
         <div className="max-w-5xl mx-auto px-6 text-center space-y-12">
           <ShieldCheck className="h-16 w-16 mx-auto text-blue-300" />
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+          <h2 className="text-3xl md:text-5xl font-heading font-bold tracking-tight">
             Enterprise-Grade Security
           </h2>
           <p className="text-xl text-blue-100 max-w-2xl mx-auto leading-relaxed">
