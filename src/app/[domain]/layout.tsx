@@ -5,7 +5,7 @@ export default async function UniversityLayout({
     params,
 }: {
     children: React.ReactNode
-    params: { domain: string }
+    params: Promise<{ domain: string }>
 }) {
     const { domain } = await params
 
@@ -17,9 +17,9 @@ export default async function UniversityLayout({
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col">
-            <header className="px-8 py-4 bg-white border-b shadow-sm flex items-center justify-between">
-                <div className="font-bold text-xl tracking-tight text-blue-900">
-                    🏫 {domain.charAt(0).toUpperCase() + domain.slice(1)} University
+            <header className="px-8 py-4 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between">
+                <div className="font-extrabold text-2xl tracking-tight text-[#1E3A8A]">
+                    {domain.charAt(0).toUpperCase() + domain.slice(1)} University
                 </div>
                 <nav className="space-x-4">
                     <a href="#" className="text-sm font-medium hover:underline">Programs</a>
