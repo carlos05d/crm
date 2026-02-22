@@ -13,8 +13,8 @@ The platform is a multi-tenant SaaS CRM built specifically for University Admiss
 We are generating UI components for a Next.js (App Router) environment. The styling is Tailwind CSS + shadcn/ui. 
 
 ## 4. Sitemap (Current)
-*   [ ] `landing-page` - The generic marketing page for the SaaS CRM platform (`/app/page.tsx`).
-*   [ ] `tenant-public-form` - The public landing page & lead capture form on a university's subdomain (`/[domain]/page.tsx`).
+*   [x] `landing-page` - The generic marketing page for the SaaS CRM platform (`/app/page.tsx`).
+*   [x] `tenant-public-form` - The public landing page & lead capture form on a university's subdomain (`/[domain]/page.tsx`).
 *   [x] `dashboard-super-admin` - The global platform dashboard for managing universities.
 *   [x] `dashboard-tenant-admin` - The university-specific dashboard for configuration and analytics.
 *   [x] `dashboard-agent-kanban` - The primary workspace for agents managing student leads.
