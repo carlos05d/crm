@@ -18,6 +18,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Search, Plus, MoreHorizontal, Mail, Loader2, CheckCircle2, Users, Pencil, Power, Trash2 } from "lucide-react"
 
+import { Eye, EyeOff } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+
 interface Agent {
     user_id: string
     display_name: string
@@ -46,6 +49,10 @@ export default function TenantAgentManagementPage() {
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
     const [phone, setPhone] = useState("")
+    const [password, setPassword] = useState("")
+    const [showPassword, setShowPassword] = useState(false)
+    const [isActive, setIsActive] = useState(true)
+    const [editError, setEditError] = useState("")
 
     // Edit state
     const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -124,21 +131,58 @@ export default function TenantAgentManagementPage() {
         e.preventDefault()
         if (!activeAgent || !name.trim()) return
         setActionLoading(true)
+        setEditError("")
 
-        const { error } = await supabase
-            .from('agents')
-            .update({ display_name: name.trim(), phone: phone.trim() })
-            .eq('user_id', activeAgent.user_id)
+        const originalEmail = getProfileEmail(activeAgent)
+        const emailChanged = email.trim() !== "" && email.trim() !== originalEmail
+        const pwdChanged = password.trim() !== ""
+        const statusChanged = isActive !== activeAgent.active
 
-        if (!error) {
+        try {
+            // Update Auth Credentials if email or password changed
+            if (emailChanged || pwdChanged) {
+                const res = await fetch("/api/agents/update", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        agentId: activeAgent.user_id,
+                        email: emailChanged ? email.trim() : undefined,
+                        password: pwdChanged ? password : undefined
+                    })
+                })
+                const data = await res.json()
+                if (!res.ok) throw new Error(data.error || "Failed to update security credentials")
+            }
+
+            // Update basic agent metadata & status
+            const updatePayload: any = { display_name: name.trim(), phone: phone.trim() }
+            if (statusChanged) updatePayload.active = isActive
+
+            const { error } = await supabase
+                .from('agents')
+                .update(updatePayload)
+                .eq('user_id', activeAgent.user_id)
+
+            if (error) throw error
+
+            // Optimistic localized UI update
             setAgents(prev => prev.map(a =>
                 a.user_id === activeAgent.user_id
-                    ? { ...a, display_name: name.trim(), phone: phone.trim() }
+                    ? {
+                        ...a,
+                        display_name: name.trim(),
+                        phone: phone.trim(),
+                        active: isActive,
+                        profiles: emailChanged ? [{ email: email.trim() }] : a.profiles
+                    }
                     : a
             ))
             setEditDialogOpen(false)
+        } catch (err: any) {
+            setEditError(err.message || "Failed to save changes")
+        } finally {
+            setActionLoading(false)
         }
-        setActionLoading(false)
     }
 
     const toggleStatus = async (agent: Agent) => {
@@ -157,9 +201,6 @@ export default function TenantAgentManagementPage() {
 
     const handleDelete = async (agentId: string) => {
         if (!confirm("Are you sure? This removes the agent from your university and unassigns their leads.")) return
-
-        // Note: For full cleanup this should ideally call an Edge Function to delete the auth user,
-        // but for now we delete the tenant agent record. Profiles RLS cascade relies on university_id.
         const { error } = await supabase.from('agents').delete().eq('user_id', agentId)
         if (!error) {
             setAgents(prev => prev.filter(a => a.user_id !== agentId))
@@ -169,7 +210,11 @@ export default function TenantAgentManagementPage() {
     const openEdit = (agent: Agent) => {
         setActiveAgent(agent)
         setName(agent.display_name)
+        setEmail(getProfileEmail(agent))
         setPhone(agent.phone || "")
+        setPassword("") // Blank default context for security
+        setIsActive(agent.active)
+        setEditError("")
         setEditDialogOpen(true)
     }
 
@@ -294,7 +339,7 @@ export default function TenantAgentManagementPage() {
                                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200/50"
                                                     : "bg-slate-100 text-slate-500 border-slate-200"}
                                             >
-                                                {agent.active ? "Active" : "Suspended"}
+                                                {agent.active ? "Active" : "Inactive"}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-center">
@@ -309,10 +354,7 @@ export default function TenantAgentManagementPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onClick={() => openEdit(agent)}>
-                                                        <Pencil className="mr-2 h-4 w-4" /> Edit Details
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => toggleStatus(agent)}>
-                                                        <Power className="mr-2 h-4 w-4" /> {agent.active ? "Suspend Agent" : "Activate Agent"}
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit Configuration
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => handleDelete(agent.user_id)}>
@@ -330,31 +372,77 @@ export default function TenantAgentManagementPage() {
             </Card>
 
             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Edit Agent Details</DialogTitle>
-                        <DialogDescription>Update contact information for {activeAgent?.display_name}.</DialogDescription>
+                        <DialogTitle>Agent Configuration</DialogTitle>
+                        <DialogDescription>Manage profile settings, credentials, and access.</DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleEditSave} className="space-y-4 pt-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="editName">Full Name</Label>
-                            <Input
-                                id="editName"
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                required
-                            />
+                    {editError && <div className="p-3 mb-2 bg-red-50 text-red-600 border border-red-200 rounded-md text-sm">{editError}</div>}
+                    <form onSubmit={handleEditSave} className="space-y-5 pt-2">
+
+                        <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label className="text-base font-semibold">Agent Access</Label>
+                                <p className="text-xs text-slate-500">Allow agent to login and view assigned leads</p>
+                            </div>
+                            <Switch checked={isActive} onCheckedChange={setIsActive} />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="editPhone">Phone Number</Label>
-                            <Input
-                                id="editPhone"
-                                value={phone}
-                                onChange={e => setPhone(e.target.value)}
-                                placeholder="+1 (555) 000-0000"
-                            />
+
+                        <div className="grid gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="editName">Full Name</Label>
+                                <Input
+                                    id="editName"
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="editEmail">Sign-in Email</Label>
+                                <Input
+                                    id="editEmail"
+                                    type="email"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="editPhone">Phone Number</Label>
+                                <Input
+                                    id="editPhone"
+                                    value={phone}
+                                    onChange={e => setPhone(e.target.value)}
+                                    placeholder="+1 (555) 000-0000"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="editPassword" className="flex items-center justify-between">
+                                    <span>Reset Password</span>
+                                    <span className="text-[10px] uppercase text-slate-400 font-bold whitespace-nowrap">Optional</span>
+                                </Label>
+                                <div className="relative">
+                                    <Input
+                                        id="editPassword"
+                                        type={showPassword ? "text" : "password"}
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        placeholder="Leave blank to drop"
+                                        className="pr-10"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                                    >
+                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <DialogFooter>
+
+                        <DialogFooter className="pt-2">
                             <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
                             <Button type="submit" disabled={actionLoading}>
                                 {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Changes
