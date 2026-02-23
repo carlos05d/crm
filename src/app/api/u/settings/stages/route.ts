@@ -5,7 +5,7 @@ import { z } from "zod"
 import { createClient } from "@supabase/supabase-js"
 
 const stageSchema = z.object({
-    id: z.string().uuid().optional(),
+    id: z.string().optional(),
     name: z.string().min(1, "Name is required").max(50),
     color: z.string().min(1),
     position: z.number().int().min(0)
