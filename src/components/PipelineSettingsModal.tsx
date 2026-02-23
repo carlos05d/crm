@@ -153,7 +153,7 @@ export function PipelineSettingsModal({
 
     const addStage = () => {
         const newStage: KanbanStage = {
-            id: `temp-${Date.now()}`,
+            id: `temp-${crypto.randomUUID()}`,
             name: "New Stage",
             color: KANBAN_COLORS[0].value,
             position: stages.length
