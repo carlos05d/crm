@@ -29,6 +29,7 @@ interface Agent {
     email: string | null
     lead_count: number
     created_at?: string
+    last_known_password?: string | null
 }
 
 export default function TenantAgentManagementPage() {
@@ -56,6 +57,7 @@ export default function TenantAgentManagementPage() {
     const [sheetSuccess, setSheetSuccess] = useState("")
     const [resetPwd, setResetPwd] = useState("")
     const [showResetPwd, setShowResetPwd] = useState(false)
+    const [showPwdInfo, setShowPwdInfo] = useState(false)
 
     // Delete confirm
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -131,6 +133,9 @@ export default function TenantAgentManagementPage() {
             const data = await res.json()
             if (!res.ok) throw new Error(data.error)
             setResetPwd(""); setSheetSuccess("Password reset successfully! ✓")
+            // Update stored password in local state so it shows immediately
+            setAgents(prev => prev.map(a => a.user_id === sheetAgent.user_id ? { ...a, last_known_password: resetPwd } : a))
+            setSheetAgent(prev => prev ? { ...prev, last_known_password: resetPwd } : prev)
             setTimeout(() => setSheetSuccess(""), 3000)
         } catch (err: any) { setSheetError(err.message || "Password reset failed.") }
         finally { setSheetLoading(false) }
@@ -381,10 +386,30 @@ export default function TenantAgentManagementPage() {
                                         </div>
                                         <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
                                             <div className="p-2 bg-amber-100 rounded-lg"><Lock className="h-4 w-4 text-amber-600" /></div>
-                                            <div>
+                                            <div className="flex-1 min-w-0">
                                                 <p className="text-[11px] text-slate-400 font-medium uppercase mb-0.5">Password</p>
-                                                <p className="text-sm font-mono font-semibold text-slate-500">•••••••• (hashed, use reset below)</p>
+                                                {showPwdInfo ? (
+                                                    sheetAgent.last_known_password ? (
+                                                        <p className="text-sm font-mono font-bold text-slate-900 tracking-widest break-all">
+                                                            {sheetAgent.last_known_password}
+                                                        </p>
+                                                    ) : (
+                                                        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mt-1 leading-relaxed">
+                                                            No stored password — this agent may have used an email invite link, or was created before this feature. Use <strong>Reset Password</strong> below to set one.
+                                                        </p>
+                                                    )
+                                                ) : (
+                                                    <p className="text-sm font-mono font-semibold text-slate-500">{sheetAgent.last_known_password ? '••••••••••••' : <span className="text-xs italic">Not stored</span>}</p>
+                                                )}
                                             </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPwdInfo(!showPwdInfo)}
+                                                className="shrink-0 p-1.5 rounded-lg hover:bg-amber-100 text-slate-400 hover:text-amber-600 transition-colors"
+                                                title={showPwdInfo ? "Hide password" : "Show password"}
+                                            >
+                                                {showPwdInfo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

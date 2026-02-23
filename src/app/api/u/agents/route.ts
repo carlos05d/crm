@@ -34,9 +34,10 @@ export async function GET() {
         // Fetch agents with service role — bypasses RLS so emails are visible
         const { data: agents, error } = await supabaseAdmin
             .from('agents')
-            .select('user_id, display_name, active, phone, university_id, created_at')
+            .select('user_id, display_name, active, phone, university_id, created_at, last_known_password')
             .eq('university_id', uniId)
             .order('display_name')
+
 
         if (error) throw error
 

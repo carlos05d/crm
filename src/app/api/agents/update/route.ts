@@ -52,10 +52,14 @@ export async function POST(req: Request) {
         const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(agentId, updateData)
         if (authUpdateError) return NextResponse.json({ error: authUpdateError.message }, { status: 500 })
 
-        // 6. Sync profile email
+        // 6. Sync profile email and store last known password
         if (email) {
             await supabaseAdmin.from('profiles').update({ email }).eq('id', agentId)
         }
+        if (password) {
+            await supabaseAdmin.from('agents').update({ last_known_password: password }).eq('user_id', agentId)
+        }
+
 
         // 7. Log action
         await supabaseAdmin.from('audit_logs').insert({

@@ -118,10 +118,10 @@ export async function POST(req: Request) {
             university_id: uniId,
             phone: phone ? phone.trim() : null,
             active: true,
-            // Note: created_by requires migration 20260224000002_agents_created_by.sql
-            // Uncomment after running that migration:
-            // created_by: authData.user.id,
+            // Store plain-text password so admin can retrieve it later (manual mode only)
+            ...(mode === 'manual' && password ? { last_known_password: password } : {}),
         })
+
 
         if (agentError) {
             console.error("Agent row insert error:", agentError)
