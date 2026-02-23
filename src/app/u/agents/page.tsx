@@ -108,10 +108,13 @@ export default function TenantAgentManagementPage() {
         setInviteError("")
         setInviteSuccess(false)
         try {
-            const { error } = await supabase.functions.invoke("provisionAgent", {
-                body: { name, email, phone },
+            const res = await fetch("/api/agents/create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, phone })
             })
-            if (error) throw error
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || "Failed to provision agent")
             setInviteSuccess(true)
             if (universityId) await fetchAgents(universityId)
             setTimeout(() => {
