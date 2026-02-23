@@ -59,7 +59,7 @@ export default function BrandingSettingsPage() {
                 .from("settings")
                 .select("branding, agent_scope, allow_agent_custom_sender_email")
                 .eq("university_id", profile.university_id)
-                .single()
+                .maybeSingle()
 
             if (settings) {
                 setPrimaryColor(settings.branding?.colors?.primary ?? "#1E3A5F")

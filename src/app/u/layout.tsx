@@ -85,7 +85,7 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
                 .from("settings")
                 .select("branding")
                 .eq("university_id", profile.university_id)
-                .single()
+                .maybeSingle()
             if (settings?.branding?.logo_url) setLogoUrl(settings.branding.logo_url)
             if (settings?.branding?.logo_size) setLogoSize(settings.branding.logo_size)
             if (settings?.branding?.logo_position) setLogoPosition(settings.branding.logo_position)
