@@ -5,7 +5,7 @@ import { createClient as createServerClient } from '@/utils/supabase/server'
 export async function POST(req: Request) {
     try {
         const body = await req.json()
-        let { name, email, phone, password, mode } = body // mode can be 'invite' or 'manual'
+        let { name, email, phone, password, mode, university_id: bodyUniversityId } = body
 
         if (!email || !name) {
             return NextResponse.json({ error: "Name and Email are required" }, { status: 400 })
@@ -22,23 +22,59 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
-        // Must be university_admin or super_admin
         const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-        const { data: requestorProfile } = await supabaseAdmin.from('profiles').select('role, university_id').eq('id', authData.user.id).single()
+        const { data: requestorProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('role, university_id')
+            .eq('id', authData.user.id)
+            .single()
 
         if (!requestorProfile || !['university_admin', 'super_admin'].includes(requestorProfile.role)) {
             return NextResponse.json({ error: "Forbidden: Not allowed to provision agents" }, { status: 403 })
         }
 
-        const uniId = requestorProfile.university_id
-        if (!uniId && requestorProfile.role !== 'super_admin') {
-            return NextResponse.json({ error: "No university assigned to your account" }, { status: 400 })
+        // ─── Resolve university_id ───────────────────────────────────────────
+        let uniId: string | null = null
+
+        if (requestorProfile.role === 'super_admin') {
+            // Super admin MUST explicitly pass university_id in the body
+            if (!bodyUniversityId) {
+                return NextResponse.json(
+                    { error: "university_id is required when a Super Admin creates an agent" },
+                    { status: 400 }
+                )
+            }
+            // Verify the university exists
+            const { data: uni, error: uniError } = await supabaseAdmin
+                .from('universities')
+                .select('id')
+                .eq('id', bodyUniversityId)
+                .single()
+
+            if (uniError || !uni) {
+                return NextResponse.json({ error: "Invalid university_id: university not found" }, { status: 400 })
+            }
+            uniId = bodyUniversityId
+        } else {
+            // University admin uses their own university
+            uniId = requestorProfile.university_id
         }
 
+        if (!uniId) {
+            return NextResponse.json({ error: "Could not determine university for this agent" }, { status: 400 })
+        }
+
+        // ─── Validate password for manual mode ──────────────────────────────
+        if (mode === 'manual' && (!password || password.trim().length < 6)) {
+            return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 })
+        }
+
+        // ─── Create auth user ────────────────────────────────────────────────
         let newUserData, createError;
 
         if (mode === 'invite') {
             const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email.trim(), {
+                redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('.supabase.co', '')}/agent/dashboard`,
                 data: { name: name.trim() }
             });
             newUserData = data;
@@ -55,8 +91,8 @@ export async function POST(req: Request) {
         }
 
         if (createError) {
-            if (createError.message.includes("already registered")) {
-                return NextResponse.json({ error: "User with this email already exists." }, { status: 400 })
+            if (createError.message.toLowerCase().includes("already registered")) {
+                return NextResponse.json({ error: "A user with this email already exists." }, { status: 400 })
             }
             throw createError
         }
@@ -67,24 +103,41 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Failed to obtain user ID from Auth service." }, { status: 500 })
         }
 
-        // Create Profile
-        await supabaseAdmin.from('profiles').insert({
+        // ─── Upsert Profile (trigger may have already created it) ───────────
+        await supabaseAdmin.from('profiles').upsert({
             id: userId,
             email: email.trim(),
             role: 'agent',
             university_id: uniId
-        })
+        }, { onConflict: 'id' })
 
-        // Create Agent Record
-        await supabaseAdmin.from('agents').insert({
+        // ─── Create Agent Record ─────────────────────────────────────────────
+        const { error: agentError } = await supabaseAdmin.from('agents').insert({
             user_id: userId,
             display_name: name.trim(),
             university_id: uniId,
             phone: phone ? phone.trim() : null,
-            active: true
+            active: true,
+            created_by: authData.user.id,
         })
 
-        return NextResponse.json({ success: true, message: "Agent provisioned successfully.", userId })
+        if (agentError) throw agentError
+
+        // ─── Write Audit Log ─────────────────────────────────────────────────
+        await supabaseAdmin.from('audit_logs').insert({
+            actor_id: authData.user.id,
+            university_id: uniId,
+            action: 'agent_created',
+            details: `Provisioned agent "${name.trim()}" (${email.trim()}) via ${mode === 'invite' ? 'email invite' : 'manual password'}`,
+        }).then(() => { }) // fire and forget — don't fail the whole request for a log write
+
+        return NextResponse.json({
+            success: true,
+            message: mode === 'invite'
+                ? "Invite email sent. Agent account will activate when they accept."
+                : "Agent account created. They can log in immediately.",
+            userId
+        })
 
     } catch (e: any) {
         console.error("Agent creation error:", e)

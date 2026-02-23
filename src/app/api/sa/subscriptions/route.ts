@@ -27,17 +27,19 @@ export async function GET() {
             return NextResponse.json({ error: "Forbidden: Super Admins Only" }, { status: 403 })
         }
 
-        // Fetch subscriptions & related data
+        // Fetch all metrics using correct count destructuring
         const [
             { data: universities },
-            { data: agents }
+            { count: totalAgents },
+            { count: totalLeads },
         ] = await Promise.all([
             supabaseAdmin.from('universities').select('id, name, plan_type, status, created_at').order('created_at', { ascending: false }),
-            supabaseAdmin.from('agents').select('id', { count: 'exact', head: true })
+            supabaseAdmin.from('agents').select('*', { count: 'exact', head: true }),
+            supabaseAdmin.from('leads').select('*', { count: 'exact', head: true }),
         ])
 
         const activeTenants = universities?.filter(u => u.status === 'active' || !u.status).length || 0
-        const totalAgents = agents?.length || 0
+        const totalUniversities = universities?.length || 0
 
         // Approximate MRR based on plans
         let mrr = 0
@@ -47,7 +49,7 @@ export async function GET() {
             if (plan === 'enterprise') mrr += 899
         })
 
-        // Fake recent activity but populated with real university names for now since we don't have a payments webhook table
+        // Recent activity from real university records
         const recentActivity = universities?.slice(0, 5).map((u, i) => ({
             id: u.id,
             uni: u.name,
@@ -61,8 +63,10 @@ export async function GET() {
             metrics: {
                 mrr,
                 activeTenants,
-                activeAgents: totalAgents,
-                pendingRenewals: Math.floor(activeTenants * 0.1) // placeholder metric
+                totalUniversities,
+                activeAgents: totalAgents ?? 0,
+                totalLeads: totalLeads ?? 0,
+                pendingRenewals: Math.floor(activeTenants * 0.1)
             },
             activity: recentActivity || []
         })

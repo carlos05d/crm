@@ -2,141 +2,203 @@
 
 import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Building2, Users, Target, BookOpen, UserCheck, TrendingUp, Loader2 } from "lucide-react"
-import { createBrowserClient } from '@supabase/ssr'
+import { Skeleton } from "@/components/ui/skeleton"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { TrendingUp, Users, Target, Building2, Loader2 } from "lucide-react"
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    PieChart, Pie, Cell, LineChart, Line, Legend
+} from "recharts"
+
+const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+
+interface AnalyticsData {
+    leadsByStage: { name: string; count: number }[]
+    uniGrowth: { month: string; count: number }[]
+    scoreDistribution: { range: string; count: number }[]
+    planDistribution: { name: string; value: number }[]
+    conversionRate: number
+    totalLeads: number
+    admittedLeads: number
+}
 
 export default function AnalyticsPage() {
     const [loading, setLoading] = useState(true)
-    const [metrics, setMetrics] = useState({
-        totalUniversities: 0,
-        totalLeads: 0,
-        totalAgents: 0,
-        totalPrograms: 0,
-        activeForms: 0,
-    })
+    const [data, setData] = useState<AnalyticsData | null>(null)
+    const [dateFrom, setDateFrom] = useState("")
+    const [dateTo, setDateTo] = useState("")
+    const [statsLoading, setStatsLoading] = useState(false)
 
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    // Global counts (unchanged — still using anon direct queries via client)
+    const [counts, setCounts] = useState({ universities: 0, leads: 0, agents: 0, programs: 0 })
 
-    useEffect(() => {
-        const fetchMetrics = async () => {
-            try {
-                // Fetch aggregate counts in parallel
-                const [
-                    { count: uniCount },
-                    { count: leadCount },
-                    { count: agentCount },
-                    { count: progCount },
-                    { count: formCount }
-                ] = await Promise.all([
-                    supabase.from('universities').select('*', { count: 'exact', head: true }),
-                    supabase.from('leads').select('*', { count: 'exact', head: true }),
-                    supabase.from('agents').select('*', { count: 'exact', head: true }),
-                    supabase.from('programs').select('*', { count: 'exact', head: true }),
-                    supabase.from('forms').select('*', { count: 'exact', head: true }).eq('active', true)
-                ])
-
-                setMetrics({
-                    totalUniversities: uniCount || 0,
-                    totalLeads: leadCount || 0,
-                    totalAgents: agentCount || 0,
-                    totalPrograms: progCount || 0,
-                    activeForms: formCount || 0,
-                })
-            } catch (error) {
-                console.error("Failed to load metrics", error)
-            } finally {
-                setLoading(false)
-            }
+    const fetchAnalytics = async (from?: string, to?: string) => {
+        setLoading(true)
+        try {
+            const params = new URLSearchParams()
+            if (from) params.set('from', from)
+            if (to) params.set('to', to)
+            const res = await fetch(`/api/sa/analytics?${params}`)
+            if (res.ok) setData(await res.json())
+        } catch { /* silent */ } finally {
+            setLoading(false)
         }
+    }
 
-        fetchMetrics()
-    }, [supabase])
+    useEffect(() => { fetchAnalytics() }, [])
 
-    if (loading) {
+    const handleFilter = () => fetchAnalytics(dateFrom, dateTo)
+
+    if (loading && !data) {
         return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <div className="flex flex-col items-center gap-4 text-slate-400">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p>Loading global platform metrics...</p>
+            <div className="space-y-6">
+                <Skeleton className="h-8 w-64" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Skeleton className="h-72 rounded-xl" />
+                    <Skeleton className="h-72 rounded-xl" />
                 </div>
             </div>
         )
     }
 
+    const statCards = [
+        { label: "Conversion Rate", value: `${data?.conversionRate ?? 0}%`, icon: Target, color: "text-emerald-600", bg: "bg-emerald-50" },
+        { label: "Total Leads", value: data?.totalLeads ?? 0, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+        { label: "Admitted Leads", value: data?.admittedLeads ?? 0, icon: TrendingUp, color: "text-purple-600", bg: "bg-purple-50" },
+        { label: "Universities", value: data?.uniGrowth?.reduce((acc, m) => acc + m.count, 0) ?? 0, icon: Building2, color: "text-amber-600", bg: "bg-amber-50" },
+    ]
+
     return (
-        <div className="space-y-8 font-sans">
-            <div>
-                <h2 className="text-3xl font-heading font-bold tracking-tight text-slate-900">Platform Analytics</h2>
-                <p className="text-slate-500 mt-1">Global statistics overview across all onboarded institutions.</p>
+        <div className="space-y-6 font-sans">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div>
+                    <h2 className="text-3xl font-heading font-bold tracking-tight text-slate-900">Platform Analytics</h2>
+                    <p className="text-slate-500 mt-1">Real-time insights across all university tenants.</p>
+                </div>
+                {/* Date Range Filter */}
+                <div className="flex items-end gap-2">
+                    <div className="space-y-1">
+                        <Label className="text-xs text-slate-500">From</Label>
+                        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-36 text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-xs text-slate-500">To</Label>
+                        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-36 text-sm" />
+                    </div>
+                    <button onClick={handleFilter}
+                        className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 h-10">
+                        Apply
+                    </button>
+                </div>
             </div>
 
-            {/* Top Level KPIs */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-slate-200">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 bg-slate-50/50 rounded-t-xl border-b border-slate-100">
-                        <CardTitle className="text-sm font-medium text-slate-600">Total Tenants</CardTitle>
-                        <Building2 className="h-4 w-4 text-primary" />
+            {/* Stat Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {statCards.map(s => (
+                    <Card key={s.label} className="border-slate-200 rounded-xl hover:shadow-md transition-shadow">
+                        <CardContent className="p-5">
+                            <div className={`inline-flex p-2 rounded-lg ${s.bg} mb-3`}>
+                                <s.icon className={`h-5 w-5 ${s.color}`} />
+                            </div>
+                            <p className="text-2xl font-heading font-bold text-slate-900">{s.value}</p>
+                            <p className="text-sm text-slate-500">{s.label}</p>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Charts Row 1 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="border-slate-200 rounded-xl">
+                    <CardHeader>
+                        <CardTitle className="text-base">Leads by Stage</CardTitle>
+                        <CardDescription>Distribution across the funnel</CardDescription>
                     </CardHeader>
-                    <CardContent className="pt-6">
-                        <div className="text-3xl font-bold font-heading text-slate-900">{metrics.totalUniversities}</div>
-                        <p className="text-xs text-emerald-600 font-medium flex items-center mt-2">
-                            <TrendingUp className="h-3 w-3 mr-1" /> Active institutions
-                        </p>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={250}>
+                            <BarChart data={data?.leadsByStage || []} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} />
+                                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} allowDecimals={false} />
+                                <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px' }} />
+                                <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </CardContent>
                 </Card>
-                <Card className="border-slate-200">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 bg-slate-50/50 rounded-t-xl border-b border-slate-100">
-                        <CardTitle className="text-sm font-medium text-slate-600">Global Leads</CardTitle>
-                        <Users className="h-4 w-4 text-blue-500" />
+
+                <Card className="border-slate-200 rounded-xl">
+                    <CardHeader>
+                        <CardTitle className="text-base">Lead Score Distribution</CardTitle>
+                        <CardDescription>Quality breakdown across all tenants</CardDescription>
                     </CardHeader>
-                    <CardContent className="pt-6">
-                        <div className="text-3xl font-bold font-heading text-slate-900">{metrics.totalLeads}</div>
-                        <p className="text-xs text-slate-500 mt-2">Captured across {metrics.activeForms} active forms</p>
-                    </CardContent>
-                </Card>
-                <Card className="border-slate-200">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 bg-slate-50/50 rounded-t-xl border-b border-slate-100">
-                        <CardTitle className="text-sm font-medium text-slate-600">Global Agents</CardTitle>
-                        <UserCheck className="h-4 w-4 text-emerald-500" />
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        <div className="text-3xl font-bold font-heading text-slate-900">{metrics.totalAgents}</div>
-                        <p className="text-xs text-slate-500 mt-2">Provisioned staff accounts</p>
-                    </CardContent>
-                </Card>
-                <Card className="border-slate-200">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 bg-slate-50/50 rounded-t-xl border-b border-slate-100">
-                        <CardTitle className="text-sm font-medium text-slate-600">Global Programs</CardTitle>
-                        <BookOpen className="h-4 w-4 text-orange-500" />
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        <div className="text-3xl font-bold font-heading text-slate-900">{metrics.totalPrograms}</div>
-                        <p className="text-xs text-slate-500 mt-2">Registered academic courses</p>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={250}>
+                            <BarChart data={data?.scoreDistribution || []} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                <XAxis dataKey="range" tick={{ fontSize: 12, fill: '#64748b' }} />
+                                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} allowDecimals={false} />
+                                <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px' }} />
+                                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                                    {(data?.scoreDistribution || []).map((_, i) => (
+                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
                     </CardContent>
                 </Card>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-                <Card className="border-slate-200 flex flex-col items-center justify-center p-12 text-center bg-slate-50">
-                    <div className="bg-white p-4 rounded-xl shadow-sm mb-4">
-                        <Target className="h-8 w-8 text-primary" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-900">Lead Volume History</h3>
-                    <p className="text-sm text-slate-500 max-w-sm mt-2">
-                        Install Recharts library to view deeply interactive historical graphs of lead generation per month across the global catalog.
-                    </p>
+            {/* Charts Row 2 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="border-slate-200 rounded-xl">
+                    <CardHeader>
+                        <CardTitle className="text-base">University Growth</CardTitle>
+                        <CardDescription>New tenants onboarded per month</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={250}>
+                            <LineChart data={data?.uniGrowth || []} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} />
+                                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} allowDecimals={false} />
+                                <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px' }} />
+                                <Line type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1' }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </CardContent>
                 </Card>
-                <Card className="border-slate-200 flex flex-col items-center justify-center p-12 text-center bg-slate-50">
-                    <div className="bg-white p-4 rounded-xl shadow-sm mb-4">
-                        <TrendingUp className="h-8 w-8 text-emerald-500" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-900">Tenant Growth Rate</h3>
-                    <p className="text-sm text-slate-500 max-w-sm mt-2">
-                        Observe Month-over-Month onboarding comparisons to track SaaS expansion goals. Requires advanced charting libraries.
-                    </p>
+
+                <Card className="border-slate-200 rounded-xl">
+                    <CardHeader>
+                        <CardTitle className="text-base">Subscription Plans</CardTitle>
+                        <CardDescription>Plan type distribution across tenants</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex items-center justify-center">
+                        <ResponsiveContainer width="100%" height={250}>
+                            <PieChart>
+                                <Pie
+                                    data={data?.planDistribution || []}
+                                    cx="50%" cy="50%"
+                                    innerRadius={60} outerRadius={100}
+                                    dataKey="value"
+                                    label={({ name, percent }) => `${name} ${Math.round(percent * 100)}%`}
+                                    labelLine={false}
+                                >
+                                    {(data?.planDistribution || []).map((_, i) => (
+                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px' }} />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </CardContent>
                 </Card>
             </div>
         </div>
