@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.lead_sources (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   university_id   UUID NOT NULL REFERENCES public.universities(id) ON DELETE CASCADE,
   type            public.lead_source_type NOT NULL DEFAULT 'manual',
-  agent_id        UUID REFERENCES public.agents(user_id) ON DELETE SET NULL,
+  agent_id        UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   file_name       TEXT,
   platform        TEXT,
   campaign        TEXT,
