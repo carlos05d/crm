@@ -118,10 +118,15 @@ export async function POST(req: Request) {
             university_id: uniId,
             phone: phone ? phone.trim() : null,
             active: true,
-            created_by: authData.user.id,
+            // Note: created_by requires migration 20260224000002_agents_created_by.sql
+            // Uncomment after running that migration:
+            // created_by: authData.user.id,
         })
 
-        if (agentError) throw agentError
+        if (agentError) {
+            console.error("Agent row insert error:", agentError)
+            throw new Error(`Agent record error: ${agentError.message}`)
+        }
 
         // ─── Write Audit Log ─────────────────────────────────────────────────
         await supabaseAdmin.from('audit_logs').insert({
