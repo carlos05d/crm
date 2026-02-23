@@ -1,11 +1,15 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
+
+// Must be client-only — SSR generates different SVG IDs causing hydration mismatch
+const QRCodeSVG = dynamic(() => import('qrcode.react').then(m => m.QRCodeSVG), { ssr: false })
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { QRCodeSVG } from "qrcode.react"
+
 import {
     Copy, Check, ExternalLink, Loader2, Activity,
     Users, TrendingUp, Calendar, Link2, QrCode, RefreshCw
