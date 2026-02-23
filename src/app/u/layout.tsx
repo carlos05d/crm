@@ -11,7 +11,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { createBrowserClient } from '@supabase/ssr'
 import {
-    LayoutDashboard, Users, KanbanSquare, Globe, BookOpen, MessageSquare, FileText, LogOut, Activity, GraduationCap, Palette
+    LayoutDashboard, Users, KanbanSquare, Globe, BookOpen, MessageSquare, FileText, LogOut, Activity, GraduationCap, Palette, BarChart2
 } from 'lucide-react'
 
 const navItems = [
@@ -43,6 +43,7 @@ const navItems = [
     {
         section: "Reports", items: [
             { href: "/u/reports", label: "CSV Exports", icon: FileText },
+            { href: "/u/leads/sources", label: "Lead Origins", icon: BarChart2 },
             { href: "/u/audit-logs", label: "Audit Logs", icon: Activity },
         ]
     },

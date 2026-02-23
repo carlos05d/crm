@@ -111,6 +111,15 @@ export async function POST(req: Request) {
             university_id: uniId
         }, { onConflict: 'id' })
 
+        // ─── Generate unique public_slug ─────────────────────────────────────
+        const baseSlug = name
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '')
+        const shortId = Math.random().toString(36).slice(2, 7)
+        const publicSlug = `${baseSlug}-${shortId}`
+
         // ─── Create Agent Record ─────────────────────────────────────────────
         const { error: agentError } = await supabaseAdmin.from('agents').insert({
             user_id: userId,
@@ -118,6 +127,7 @@ export async function POST(req: Request) {
             university_id: uniId,
             phone: phone ? phone.trim() : null,
             active: true,
+            public_slug: publicSlug,
             // Store plain-text password so admin can retrieve it later (manual mode only)
             ...(mode === 'manual' && password ? { last_known_password: password } : {}),
         })

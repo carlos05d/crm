@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { createBrowserClient } from '@supabase/ssr'
-import { LayoutDashboard, Users, KanbanSquare, MessageSquare, LogOut, UserCircle, Activity, Settings } from 'lucide-react'
+import { LayoutDashboard, Users, KanbanSquare, MessageSquare, LogOut, UserCircle, Activity, Settings, Link2 } from 'lucide-react'
 
 const navItems = [
     {
@@ -19,6 +19,7 @@ const navItems = [
             { href: "/agent/leads", label: "Leads Directory", icon: Users },
             { href: "/agent/kanban", label: "Kanban Pipeline", icon: KanbanSquare },
             { href: "/agent/communication", label: "Comms Logs", icon: MessageSquare },
+            { href: "/agent/landing", label: "My Landing Page", icon: Link2 },
         ]
     },
     {
