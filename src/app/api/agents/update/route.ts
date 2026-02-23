@@ -14,7 +14,11 @@ export async function POST(req: Request) {
         const cookieStore = await cookies()
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
         const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+        const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+        if (!supabaseServiceRoleKey) {
+            return NextResponse.json({ error: "Missing SUPABASE_SERVICE_ROLE_KEY in `.env.local`" }, { status: 500 })
+        }
 
         const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
             cookies: {

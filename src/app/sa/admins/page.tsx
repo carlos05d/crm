@@ -168,25 +168,21 @@ export default function PlatformAdminsPage() {
         setCreateLoading(true)
 
         try {
-            // Sign up the new user (in a real app this would go through a service-role edge function)
-            const { data, error } = await supabase.auth.signUp({
-                email: createEmail.trim(),
-                password: createPassword,
-                options: { emailRedirectTo: `${window.location.origin}/login` },
-            })
-            if (error) throw error
-
-            // The trigger creates the profile — but we can also upsert to set university + role immediately
-            if (data.user) {
-                await supabase.from("profiles").upsert({
-                    id: data.user.id,
+            const res = await fetch('/api/admins/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     email: createEmail.trim(),
+                    password: createPassword,
                     role: createRole,
-                    university_id: createUniId || null,
-                }, { onConflict: "id" })
-            }
+                    universityId: createUniId || null
+                })
+            })
 
-            setCreateResult({ type: "success", msg: `Account created for ${createEmail}. They may need to confirm their email.` })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to create account')
+
+            setCreateResult({ type: "success", msg: `Account created for ${createEmail}. They can now log in.` })
             setCreateEmail("")
             setCreatePassword("")
             setCreateUniId("")
@@ -334,21 +330,21 @@ export default function PlatformAdminsPage() {
                     <CardContent className="space-y-4">
                         <div className="bg-white p-4 rounded-lg border border-slate-200">
                             <h4 className="text-sm font-medium text-slate-500">Super Admins</h4>
-                            <p className="text-3xl font-heading font-bold text-slate-900 mt-1">
+                            <div className="text-3xl font-heading font-bold text-slate-900 mt-1">
                                 {loading ? <Skeleton className="h-8 w-12" /> : superAdmins.length}
-                            </p>
+                            </div>
                         </div>
                         <div className="bg-white p-4 rounded-lg border border-slate-200">
                             <h4 className="text-sm font-medium text-slate-500">University Admins</h4>
-                            <p className="text-3xl font-heading font-bold text-slate-900 mt-1">
+                            <div className="text-3xl font-heading font-bold text-slate-900 mt-1">
                                 {loading ? <Skeleton className="h-8 w-12" /> : uniAdmins.length}
-                            </p>
+                            </div>
                         </div>
                         <div className="bg-white p-4 rounded-lg border border-slate-200">
                             <h4 className="text-sm font-medium text-slate-500">Total Tenants</h4>
-                            <p className="text-3xl font-heading font-bold text-slate-900 mt-1">
+                            <div className="text-3xl font-heading font-bold text-slate-900 mt-1">
                                 {loading ? <Skeleton className="h-8 w-12" /> : universities.length}
-                            </p>
+                            </div>
                         </div>
                         <p className="text-xs text-slate-500 leading-relaxed">
                             University Admins can only access data scoped to their <code>university_id</code> via Row Level Security.
