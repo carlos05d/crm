@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, BookOpen, Trash2, FolderOpen, Save, Loader2 } from "lucide-react"
+import { Plus, BookOpen, Trash2, FolderOpen, Save, Loader2, Users } from "lucide-react"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog"
@@ -40,10 +40,21 @@ export default function ProgramsPage() {
         setUniversityId(profile.university_id)
 
         const [{ data: prog }, { data: dept }] = await Promise.all([
-            supabase.from("programs").select("id, name, department_id, departments(name)").eq("university_id", profile.university_id).order("name"),
+            // Join leads to get a count of students interested/enrolled in the program
+            supabase.from("programs")
+                .select("id, name, department_id, departments(name), leads(id)")
+                .eq("university_id", profile.university_id)
+                .order("name"),
             supabase.from("departments").select("id, name").eq("university_id", profile.university_id).order("name"),
         ])
-        setPrograms(prog ?? [])
+
+        // the count comes back as an array of leads, so we just map it to the length
+        const mappedProgs = (prog ?? []).map((p: any) => ({
+            ...p,
+            studentsCount: p.leads ? p.leads.length : 0
+        }))
+
+        setPrograms(mappedProgs)
         setDepartments(dept ?? [])
         setLoading(false)
     }
@@ -149,9 +160,15 @@ export default function ProgramsPage() {
                                 <CardTitle className="text-sm font-semibold text-slate-900 mt-2 leading-tight">{prog.name}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {prog.departments?.name && (
-                                    <Badge variant="outline" className="text-xs">📂 {prog.departments.name}</Badge>
-                                )}
+                                <div className="flex flex-col gap-2 mt-2">
+                                    <div className="flex items-center text-sm text-slate-500">
+                                        <Users className="mr-1.5 h-4 w-4 text-slate-400" />
+                                        <span>{prog.studentsCount || 0} students enrolled</span>
+                                    </div>
+                                    {prog.departments?.name && (
+                                        <Badge variant="outline" className="w-fit text-xs bg-slate-50">📂 {prog.departments.name}</Badge>
+                                    )}
+                                </div>
                             </CardContent>
                         </Card>
                     ))}
