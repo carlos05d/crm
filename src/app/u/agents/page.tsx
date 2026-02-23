@@ -111,7 +111,7 @@ export default function TenantAgentManagementPage() {
             const res = await fetch("/api/agents/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, phone })
+                body: JSON.stringify({ name, email, phone, password })
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || "Failed to provision agent")
@@ -245,7 +245,7 @@ export default function TenantAgentManagementPage() {
                     </div>
                     <Dialog open={dialogOpen} onOpenChange={(open) => {
                         setDialogOpen(open)
-                        if (open) { setName(""); setEmail(""); setPhone(""); setInviteError("") }
+                        if (open) { setName(""); setEmail(""); setPhone(""); setPassword(""); setInviteError("") }
                     }}>
                         <DialogTrigger asChild>
                             <Button><Plus className="mr-2 h-4 w-4" /> Invite Agent</Button>
@@ -266,6 +266,10 @@ export default function TenantAgentManagementPage() {
                                     <div className="space-y-2">
                                         <Label htmlFor="email">Work Email</Label>
                                         <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="jane@university.edu" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="createPassword">Password</Label>
+                                        <Input id="createPassword" type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="phone">Phone (Optional)</Label>

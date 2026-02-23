@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
+import { createClient as createServerClient } from '@/utils/supabase/server'
 
 export async function POST(req: Request) {
     try {
@@ -11,19 +11,13 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Name and Email are required" }, { status: 400 })
         }
 
-        const cookieStore = await cookies()
-        const cookieHeader = cookieStore.toString()
-
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-        // Authenticate requestor
-        const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
-            global: { headers: { cookie: cookieHeader } },
-        })
-
+        // Authenticate requestor via secure Server Client
+        const supabaseUser = await createServerClient()
         const { data: authData, error: authError } = await supabaseUser.auth.getUser()
+
         if (authError || !authData?.user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }

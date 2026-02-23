@@ -1,25 +1,19 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
+import { createClient as createServerClient } from '@/utils/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
     try {
-        const cookieStore = await cookies()
-        const cookieHeader = cookieStore.toString()
-
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
         if (!supabaseServiceRoleKey) {
             return NextResponse.json({ error: "Missing Server Credentials" }, { status: 500 })
         }
 
-        const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
-            global: { headers: { cookie: cookieHeader } },
-        })
+        const supabaseUser = await createServerClient()
 
         const { data: authData, error: authError } = await supabaseUser.auth.getUser()
         if (authError || !authData.user) {
