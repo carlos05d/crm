@@ -82,7 +82,7 @@ export default function TenantLeadsPage() {
             { data: programsData },
             { data: stagesData }
         ] = await Promise.all([
-            supabase.from("leads").select("*, profiles(first_name, last_name, display_name), programs(name), kanban_stages(name)").eq("university_id", profile.university_id).order("created_at", { ascending: false }),
+            supabase.from("leads").select("*, profiles(first_name, last_name), programs(name), kanban_stages(name)").eq("university_id", profile.university_id).order("created_at", { ascending: false }),
             supabase.from("agents").select("user_id, display_name").eq("university_id", profile.university_id).eq("active", true),
             supabase.from("programs").select("id, name").eq("university_id", profile.university_id).order("name"),
             supabase.from("kanban_stages").select("id, name").eq("university_id", profile.university_id).order("position"),
@@ -162,7 +162,7 @@ export default function TenantLeadsPage() {
                             <DialogTitle>Add New Lead</DialogTitle>
                             <DialogDescription>Create a manual lead entry and optionally assign it to an agent or program.</DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleSubmit(onSubmit)}>
+                        <form onSubmit={handleSubmit(onSubmit, (errs) => console.error("Form validation errors:", errs))}>
                             <div className="grid gap-4 py-4">
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1.5">
