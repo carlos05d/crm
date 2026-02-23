@@ -15,6 +15,7 @@ import {
     type DragStartEvent,
     type DragEndEvent,
     closestCorners,
+    useDroppable
 } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
@@ -46,6 +47,15 @@ const STAGE_COLORS: Record<string, string> = {
     "Qualified": "bg-emerald-100 text-emerald-700",
     "Admitted": "bg-purple-100 text-purple-700",
     "Rejected": "bg-red-100 text-red-700",
+}
+
+function DroppableColumn({ id, children, className }: { id: string, children: React.ReactNode, className?: string }) {
+    const { setNodeRef } = useDroppable({ id })
+    return (
+        <div ref={setNodeRef} className={className}>
+            {children}
+        </div>
+    )
 }
 
 function LeadCard({ lead, isDragging, onClick }: { lead: Lead; isDragging?: boolean, onClick?: () => void }) {
@@ -127,8 +137,8 @@ export default function AgentKanbanPage() {
         const draggedLead = leads.find(l => l.id === active.id)
         if (!draggedLead) return
 
-        const overIsStage = stages.some(s => s.id === over.id)
-        const targetStageId = overIsStage ? (over.id as string) : (leads.find(l => l.id === over.id)?.stage_id ?? null)
+        const overIsStage = stages.some(s => s.id === over.id) || over.id === "unassigned"
+        const targetStageId = overIsStage ? (over.id === "unassigned" ? null : over.id as string) : (leads.find(l => l.id === over.id)?.stage_id ?? null)
 
         if (draggedLead.stage_id === targetStageId) return
 
@@ -199,12 +209,12 @@ export default function AgentKanbanPage() {
                                         <span className="text-xs text-slate-400 font-medium">{stageLeads.length}</span>
                                     </div>
                                     <SortableContext items={stageLeads.map(l => l.id)} strategy={verticalListSortingStrategy}>
-                                        <div id={stage.id} className="flex-1 bg-slate-50/80 rounded-xl border border-slate-200 p-2 space-y-2 min-h-[120px]">
+                                        <DroppableColumn id={stage.id} className="flex-1 bg-slate-50/80 rounded-xl border border-slate-200 p-2 space-y-2 min-h-[120px]">
                                             {stageLeads.map(lead => (
                                                 <LeadCard key={lead.id} lead={lead} isDragging={lead.id === activeId} onClick={() => openDetails(lead)} />
                                             ))}
                                             {stageLeads.length === 0 && <div className="text-center py-6 text-slate-300 text-xs">Drop leads here</div>}
-                                        </div>
+                                        </DroppableColumn>
                                     </SortableContext>
                                 </div>
                             )
@@ -216,11 +226,11 @@ export default function AgentKanbanPage() {
                                     <div className="px-2 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-600">Unassigned</div>
                                     <span className="text-xs text-slate-400 font-medium">{unassigned.length}</span>
                                 </div>
-                                <div className="flex-1 bg-slate-50/50 rounded-xl border border-dashed border-slate-300 p-2 space-y-2">
+                                <DroppableColumn id="unassigned" className="flex-1 bg-slate-50/50 rounded-xl border border-dashed border-slate-300 p-2 space-y-2 min-h-[120px]">
                                     {unassigned.map(lead => (
                                         <LeadCard key={lead.id} lead={lead} onClick={() => openDetails(lead)} />
                                     ))}
-                                </div>
+                                </DroppableColumn>
                             </div>
                         )}
                     </div>
