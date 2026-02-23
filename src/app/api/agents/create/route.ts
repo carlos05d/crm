@@ -5,7 +5,7 @@ import { createClient as createServerClient } from '@/utils/supabase/server'
 export async function POST(req: Request) {
     try {
         const body = await req.json()
-        let { name, email, phone, password } = body
+        let { name, email, phone, password, mode } = body // mode can be 'invite' or 'manual'
 
         if (!email || !name) {
             return NextResponse.json({ error: "Name and Email are required" }, { status: 400 })
@@ -35,16 +35,24 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "No university assigned to your account" }, { status: 400 })
         }
 
-        // Generate a random password if not provided (so we can at least create the account immediately)
-        const tempPassword = password || Array(16).fill(0).map(() => Math.random().toString(36).charAt(2)).join('')
+        let newUserData, createError;
 
-        // Create the user in Auth
-        const { data: newUserData, error: createError } = await supabaseAdmin.auth.admin.createUser({
-            email: email.trim(),
-            password: tempPassword,
-            email_confirm: true,
-            user_metadata: { name: name.trim() }
-        })
+        if (mode === 'invite') {
+            const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email.trim(), {
+                data: { name: name.trim() }
+            });
+            newUserData = data;
+            createError = error;
+        } else {
+            const { data, error } = await supabaseAdmin.auth.admin.createUser({
+                email: email.trim(),
+                password: password,
+                email_confirm: true,
+                user_metadata: { name: name.trim() }
+            });
+            newUserData = data;
+            createError = error;
+        }
 
         if (createError) {
             if (createError.message.includes("already registered")) {
@@ -53,7 +61,11 @@ export async function POST(req: Request) {
             throw createError
         }
 
-        const userId = newUserData.user.id
+        const userId = newUserData?.user?.id
+
+        if (!userId) {
+            return NextResponse.json({ error: "Failed to obtain user ID from Auth service." }, { status: 500 })
+        }
 
         // Create Profile
         await supabaseAdmin.from('profiles').insert({

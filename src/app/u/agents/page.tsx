@@ -41,6 +41,7 @@ export default function TenantAgentManagementPage() {
 
     // Invite dialog state
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [provisionMode, setProvisionMode] = useState<"invite" | "manual">("invite")
     const [isInviting, setIsInviting] = useState(false)
     const [inviteSuccess, setInviteSuccess] = useState(false)
     const [inviteError, setInviteError] = useState("")
@@ -111,7 +112,7 @@ export default function TenantAgentManagementPage() {
             const res = await fetch("/api/agents/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, phone, password })
+                body: JSON.stringify({ name, email, phone, password: provisionMode === 'manual' ? password : "", mode: provisionMode })
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || "Failed to provision agent")
@@ -254,11 +255,30 @@ export default function TenantAgentManagementPage() {
                             <DialogHeader>
                                 <DialogTitle>Provision New Agent</DialogTitle>
                                 <DialogDescription>
-                                    This will create a user account, assign permissions, and send an email invite.
+                                    {provisionMode === "invite"
+                                        ? "Create the account and send a magic link email so they can set their password."
+                                        : "Manually create the account with a known password. They can log in immediately."
+                                    }
                                 </DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleInvite}>
                                 <div className="grid gap-4 py-4">
+                                    <div className="flex bg-slate-100 p-1 rounded-lg mb-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setProvisionMode("invite")}
+                                            className={`flex-1 text-sm font-medium py-1.5 rounded-md transition-all ${provisionMode === "invite" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
+                                        >
+                                            Send Email Invite
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setProvisionMode("manual")}
+                                            className={`flex-1 text-sm font-medium py-1.5 rounded-md transition-all ${provisionMode === "manual" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
+                                        >
+                                            Set Password Manually
+                                        </button>
+                                    </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="name">Full Name</Label>
                                         <Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="Jane Doe" />
@@ -267,10 +287,12 @@ export default function TenantAgentManagementPage() {
                                         <Label htmlFor="email">Work Email</Label>
                                         <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="jane@university.edu" />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="createPassword">Password</Label>
-                                        <Input id="createPassword" type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
-                                    </div>
+                                    {provisionMode === "manual" && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="createPassword">Password</Label>
+                                            <Input id="createPassword" type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
+                                        </div>
+                                    )}
                                     <div className="space-y-2">
                                         <Label htmlFor="phone">Phone (Optional)</Label>
                                         <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
