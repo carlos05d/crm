@@ -58,24 +58,15 @@ export default function UniversitiesManagementPage() {
 
     const fetchUniversities = useCallback(async () => {
         setLoading(true)
-        const { data } = await supabase
-            .from("universities")
-            .select("id, name, subdomain, plan_type, status, created_at")
-            .order("created_at", { ascending: false })
-
-        if (!data) { setLoading(false); return }
-
-        // Fetch admin counts for each university
-        const enriched = await Promise.all(data.map(async (uni) => {
-            const [{ count: adminCount }, { count: leadCount }, { count: agentCount }] = await Promise.all([
-                supabase.from("profiles").select("*", { count: "exact", head: true }).eq("university_id", uni.id).eq("role", "university_admin"),
-                supabase.from("leads").select("*", { count: "exact", head: true }).eq("university_id", uni.id),
-                supabase.from("agents").select("*", { count: "exact", head: true }).eq("university_id", uni.id),
-            ])
-            return { ...uni, admin_count: adminCount ?? 0, lead_count: leadCount ?? 0, agent_count: agentCount ?? 0 }
-        }))
-
-        setUniversities(enriched)
+        try {
+            const res = await fetch('/api/sa/universities')
+            const data = await res.json()
+            if (res.ok) {
+                setUniversities(data.unis || [])
+            }
+        } catch (err) {
+            console.error(err)
+        }
         setLoading(false)
     }, [])
 

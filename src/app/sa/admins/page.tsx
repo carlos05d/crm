@@ -76,24 +76,19 @@ export default function PlatformAdminsPage() {
 
     const fetchData = useCallback(async () => {
         setLoading(true)
-        const [
-            { data: unis },
-            { data: profiles },
-        ] = await Promise.all([
-            supabase.from("universities").select("id, name").order("name"),
-            supabase.from("profiles").select("id, email, role, university_id, created_at")
-                .in("role", ["super_admin", "university_admin"])
-                .order("created_at", { ascending: false }),
-        ])
-
-        setUniversities(unis ?? [])
-
-        // Enrich profiles with university name
-        const enriched = (profiles ?? []).map((p: any) => ({
-            ...p,
-            uni_name: unis?.find((u: University) => u.id === p.university_id)?.name ?? "Platform",
-        }))
-        setAdmins(enriched)
+        try {
+            const res = await fetch('/api/sa/admins')
+            const data = await res.json()
+            if (res.ok) {
+                setUniversities(data.unis || [])
+                setAdmins((data.profiles || []).map((p: any) => ({
+                    ...p,
+                    uni_name: data.unis?.find((u: University) => u.id === p.university_id)?.name ?? "Platform",
+                })))
+            }
+        } catch (err) {
+            console.error(err)
+        }
         setLoading(false)
     }, [])
 

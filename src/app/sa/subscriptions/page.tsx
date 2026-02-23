@@ -1,11 +1,29 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CreditCard, ArrowUpRight, DollarSign, Users, Activity } from "lucide-react"
+import { CreditCard, ArrowUpRight, DollarSign, Users, Activity, Loader2 } from "lucide-react"
 
 export default function SubscriptionsPage() {
+    const [data, setData] = useState<any>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        async function load() {
+            setLoading(true)
+            try {
+                const res = await fetch('/api/sa/subscriptions')
+                const json = await res.json()
+                if (res.ok) setData(json)
+            } catch (err) {
+                console.error(err)
+            }
+            setLoading(false)
+        }
+        load()
+    }, [])
+
     return (
         <div className="space-y-6 font-sans">
             <div>
@@ -20,9 +38,11 @@ export default function SubscriptionsPage() {
                         <DollarSign className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">$45,231.89</div>
+                        <div className="text-2xl font-bold text-slate-900">
+                            {loading ? <Loader2 className="h-5 w-5 animate-spin text-slate-400" /> : `$${(data?.metrics?.mrr || 0).toLocaleString()}`}
+                        </div>
                         <p className="text-xs text-emerald-600 mt-1 flex items-center">
-                            <ArrowUpRight className="h-3 w-3 mr-1" /> +20.1% from last month
+                            Estimated recurring revenue
                         </p>
                     </CardContent>
                 </Card>
@@ -32,9 +52,11 @@ export default function SubscriptionsPage() {
                         <Users className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">+2350</div>
+                        <div className="text-2xl font-bold text-slate-900">
+                            {loading ? <Loader2 className="h-5 w-5 animate-spin text-slate-400" /> : data?.metrics?.activeTenants || 0}
+                        </div>
                         <p className="text-xs text-slate-500 mt-1 flex items-center">
-                            Across 12 global regions
+                            Total active universities
                         </p>
                     </CardContent>
                 </Card>
@@ -44,9 +66,11 @@ export default function SubscriptionsPage() {
                         <Activity className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">+12,234</div>
+                        <div className="text-2xl font-bold text-slate-900">
+                            {loading ? <Loader2 className="h-5 w-5 animate-spin text-slate-400" /> : data?.metrics?.activeAgents || 0}
+                        </div>
                         <p className="text-xs text-slate-500 mt-1 flex items-center">
-                            Actively engaging with leads
+                            Total provisioned accounts
                         </p>
                     </CardContent>
                 </Card>
@@ -56,9 +80,11 @@ export default function SubscriptionsPage() {
                         <CreditCard className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">12</div>
-                        <p className="text-xs text-orange-600 mt-1 flex items-center">
-                            Requires attention this week
+                        <div className="text-2xl font-bold text-slate-900">
+                            {loading ? <Loader2 className="h-5 w-5 animate-spin text-slate-400" /> : data?.metrics?.pendingRenewals || 0}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1 flex items-center">
+                            Estimated upcoming
                         </p>
                     </CardContent>
                 </Card>
@@ -68,30 +94,33 @@ export default function SubscriptionsPage() {
                 <CardHeader>
                     <CardTitle>Recent Subscription Activity</CardTitle>
                     <CardDescription>
-                        A log of recent plan changes and renewals.
+                        A log of recent plan changes and renewals from the database.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-8">
-                        {/* Fake audit loop for UI demonstration */}
-                        {[
-                            { uni: "Harvard University", action: "Upgraded to Enterprise", time: "2 hours ago", color: "text-emerald-600", bg: "bg-emerald-50" },
-                            { uni: "Local College", action: "Payment Failed", time: "5 hours ago", color: "text-red-600", bg: "bg-red-50" },
-                            { uni: "MIT", action: "Renewed Enterprise Plan", time: "1 day ago", color: "text-blue-600", bg: "bg-blue-50" },
-                        ].map((log, i) => (
-                            <div key={i} className="flex items-center">
-                                <span className={`flex h-2 w-2 rounded-full ${log.bg} mr-4`}>
-                                    <span className={`h-2 w-2 rounded-full ${log.color.replace('text', 'bg')}`}></span>
-                                </span>
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium leading-none">{log.uni}</p>
-                                    <p className={`text-sm ${log.color}`}>
-                                        {log.action}
-                                    </p>
-                                </div>
-                                <div className="ml-auto font-medium text-slate-500 text-sm">{log.time}</div>
+                        {loading ? (
+                            <div className="flex h-20 items-center justify-center">
+                                <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
                             </div>
-                        ))}
+                        ) : !data?.activity || data.activity.length === 0 ? (
+                            <div className="text-sm text-slate-500 text-center py-4">No recent activity</div>
+                        ) : (
+                            data.activity.map((log: any, i: number) => (
+                                <div key={i} className="flex items-center">
+                                    <span className={`flex h-2 w-2 rounded-full ${log.bg} mr-4`}>
+                                        <span className={`h-2 w-2 rounded-full ${log.color.replace('text', 'bg')}`}></span>
+                                    </span>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium leading-none">{log.uni}</p>
+                                        <p className={`text-sm ${log.color}`}>
+                                            {log.action}
+                                        </p>
+                                    </div>
+                                    <div className="ml-auto font-medium text-slate-500 text-sm">{log.time}</div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </CardContent>
             </Card>
