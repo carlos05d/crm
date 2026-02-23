@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, Phone, Flame, Users, Filter } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Label } from "@/components/ui/label"
+import { PipelineSettingsModal } from "@/components/PipelineSettingsModal"
 
 interface Lead {
     id: string
@@ -27,16 +28,10 @@ interface Lead {
 interface Stage {
     id: string
     name: string
+    color: string
     position: number
 }
 
-const STAGE_COLORS: Record<string, string> = {
-    "New": "bg-blue-100 text-blue-700",
-    "Contacted": "bg-amber-100 text-amber-700",
-    "Qualified": "bg-emerald-100 text-emerald-700",
-    "Admitted": "bg-purple-100 text-purple-700",
-    "Rejected": "bg-red-100 text-red-700",
-}
 
 /**
  * Static read-only lead card — no drag, no sortable, no refs.
@@ -116,7 +111,13 @@ export default function UniversityKanbanPage() {
         }
         init()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [supabase])
+
+    const refreshStages = async () => {
+        if (!universityId) return
+        const { data: stagesData } = await supabase.from("kanban_stages").select("*").eq("university_id", universityId).order("position")
+        setStages(stagesData ?? [])
+    }
 
     const filteredLeads = useMemo(() => {
         return leads.filter(l => {
@@ -147,8 +148,8 @@ export default function UniversityKanbanPage() {
     }
 
     const allStageColumns = [
-        { id: "unassigned", name: "Unassigned", leads: unassigned },
-        ...stages.map(s => ({ id: s.id, name: s.name, leads: getLeadsForStage(s.id) }))
+        { id: "unassigned", name: "Unassigned", color: "bg-slate-100 text-slate-700", leads: unassigned },
+        ...stages.map(s => ({ id: s.id, name: s.name, color: s.color, leads: getLeadsForStage(s.id) }))
     ]
 
     return (
@@ -160,8 +161,9 @@ export default function UniversityKanbanPage() {
                 </div>
 
                 {/* Filter Controls */}
-                <div className="flex items-center gap-2 shrink-0">
-                    <Filter className="h-4 w-4 text-slate-400 shrink-0" />
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <PipelineSettingsModal universityId={universityId} onSaved={refreshStages} />
+                    <Filter className="h-4 w-4 text-slate-400 shrink-0 ml-2" />
                     <Select value={filterAgent} onValueChange={setFilterAgent}>
                         <SelectTrigger className="w-[160px] bg-white border-slate-200 text-sm">
                             <SelectValue placeholder="All Agents" />
@@ -190,7 +192,7 @@ export default function UniversityKanbanPage() {
             {/* Summary stat bar */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {allStageColumns.map(col => {
-                    const colorClass = STAGE_COLORS[col.name] || "bg-slate-100 text-slate-700"
+                    const colorClass = col.color || "bg-slate-100 text-slate-700"
                     return (
                         <Card key={col.id} className="rounded-lg border-slate-200">
                             <CardContent className="p-3 flex items-center justify-between">
@@ -207,7 +209,7 @@ export default function UniversityKanbanPage() {
             {/* Kanban Columns */}
             <div className="flex gap-4 overflow-x-auto pb-6 -mx-1 px-1">
                 {allStageColumns.map(col => {
-                    const colorClass = STAGE_COLORS[col.name] || "bg-slate-100 text-slate-700"
+                    const colorClass = col.color || "bg-slate-100 text-slate-700"
                     return (
                         <div key={col.id} className="flex-shrink-0 w-72">
                             <Card className="h-full rounded-xl border-slate-200 bg-slate-50/80">

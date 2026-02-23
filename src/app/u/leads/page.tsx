@@ -82,10 +82,10 @@ export default function TenantLeadsPage() {
             { data: programsData },
             { data: stagesData }
         ] = await Promise.all([
-            supabase.from("leads").select("*, profiles(first_name, last_name), programs(name), kanban_stages(name)").eq("university_id", profile.university_id).order("created_at", { ascending: false }),
+            supabase.from("leads").select("*, profiles(first_name, last_name), programs(name), kanban_stages(name, color)").eq("university_id", profile.university_id).order("created_at", { ascending: false }),
             supabase.from("agents").select("user_id, display_name").eq("university_id", profile.university_id).eq("active", true),
             supabase.from("programs").select("id, name").eq("university_id", profile.university_id).order("name"),
-            supabase.from("kanban_stages").select("id, name").eq("university_id", profile.university_id).order("position"),
+            supabase.from("kanban_stages").select("id, name, color").eq("university_id", profile.university_id).order("position"),
         ])
         setLeads(leadsData ?? [])
         setAgents(agentsData ?? [])
@@ -317,7 +317,7 @@ export default function TenantLeadsPage() {
                                                 ) : <span className="text-xs text-slate-400">No Program</span>}
 
                                                 {lead.kanban_stages ? (
-                                                    <Badge variant="secondary" className="text-xs font-normal">
+                                                    <Badge variant="outline" className={`text-xs font-normal border-opacity-20 ${lead.kanban_stages.color || "bg-slate-100 text-slate-700"}`}>
                                                         {lead.kanban_stages.name}
                                                     </Badge>
                                                 ) : null}

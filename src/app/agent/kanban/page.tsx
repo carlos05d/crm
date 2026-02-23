@@ -38,16 +38,10 @@ interface Lead {
 interface Stage {
     id: string
     name: string
+    color: string
     position: number
 }
 
-const STAGE_COLORS: Record<string, string> = {
-    "New": "bg-blue-100 text-blue-700",
-    "Contacted": "bg-amber-100 text-amber-700",
-    "Qualified": "bg-emerald-100 text-emerald-700",
-    "Admitted": "bg-purple-100 text-purple-700",
-    "Rejected": "bg-red-100 text-red-700",
-}
 
 function DroppableColumn({ id, children, className }: { id: string, children: React.ReactNode, className?: string }) {
     const { setNodeRef } = useDroppable({ id })
@@ -175,7 +169,7 @@ export default function AgentKanbanPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                 {stages.map(stage => {
                     const count = getLeadsForStage(stage.id).length
-                    const colorClass = STAGE_COLORS[stage.name] || "bg-slate-100 text-slate-700"
+                    const colorClass = stage.color || "bg-slate-100 text-slate-700"
                     return (
                         <Card key={stage.id} className="rounded-lg border-slate-200">
                             <CardContent className="p-3 flex items-center justify-between">
@@ -199,7 +193,7 @@ export default function AgentKanbanPage() {
                     <div className="flex gap-4 overflow-x-auto pb-6 min-h-[500px]">
                         {stages.map(stage => {
                             const stageLeads = getLeadsForStage(stage.id)
-                            const colorClass = STAGE_COLORS[stage.name] || "bg-slate-100 text-slate-700"
+                            const colorClass = stage.color || "bg-slate-100 text-slate-700"
                             return (
                                 <div key={stage.id} className="flex flex-col shrink-0 w-64">
                                     <div className="flex items-center justify-between mb-3 px-1">

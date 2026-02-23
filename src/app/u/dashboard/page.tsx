@@ -28,12 +28,16 @@ function timeAgo(dateStr: string) {
     return `${Math.floor(h / 24)}d ago`
 }
 
-const STAGE_COLORS: Record<string, string> = {
-    New: "#3B82F6",
-    Contacted: "#8B5CF6",
-    Qualified: "#F59E0B",
-    Admitted: "#10B981",
-    Rejected: "#EF4444",
+const TAILWIND_TO_HEX: Record<string, string> = {
+    "bg-slate-100 text-slate-700": "#64748b",
+    "bg-blue-100 text-blue-700": "#3b82f6",
+    "bg-emerald-100 text-emerald-700": "#10b981",
+    "bg-amber-100 text-amber-700": "#f59e0b",
+    "bg-purple-100 text-purple-700": "#8b5cf6",
+    "bg-red-100 text-red-700": "#ef4444",
+    "bg-rose-100 text-rose-700": "#f43f5e",
+    "bg-orange-100 text-orange-700": "#f97316",
+    "bg-cyan-100 text-cyan-700": "#06b6d4"
 }
 
 // ── KPI Card ─────────────────────────────────────────────────────────────────
@@ -143,7 +147,7 @@ export default function TenantAdminDashboardPage() {
                 supabase.from("forms").select("*", { count: "exact", head: true }).eq("university_id", uid),
                 supabase.from("leads").select("id, first_name, last_name, email, created_at, status").eq("university_id", uid).order("created_at", { ascending: false }).limit(5),
                 supabase.from("leads").select("id, created_at, status").eq("university_id", uid).order("created_at", { ascending: true }),
-                supabase.from("kanban_stages").select("name, position").eq("university_id", uid).order("position"),
+                supabase.from("kanban_stages").select("name, position, color").eq("university_id", uid).order("position"),
             ])
 
             setStats({ leads: leadsCount ?? 0, agents: agentsCount ?? 0, messages: 0, forms: formsCount ?? 0 })
@@ -157,7 +161,11 @@ export default function TenantAdminDashboardPage() {
                     if (l.status && stageCounts[l.status] !== undefined) stageCounts[l.status]++
                     else if (l.status) stageCounts[l.status] = (stageCounts[l.status] || 0) + 1
                 })
-                setStageData(stages.map(s => ({ name: s.name, count: stageCounts[s.name] ?? 0 })))
+                setStageData(stages.map(s => ({
+                    name: s.name,
+                    count: stageCounts[s.name] ?? 0,
+                    fill: TAILWIND_TO_HEX[s.color] || "#64748b"
+                })))
             }
 
             // ── Leads over last 7 days (area chart) ─────────────────
@@ -285,7 +293,7 @@ export default function TenantAdminDashboardPage() {
                                     <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: 12 }} />
                                     <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                                         {stageData.map((entry, index) => (
-                                            <Cell key={index} fill={STAGE_COLORS[entry.name] ?? "#6366f1"} />
+                                            <Cell key={index} fill={entry.fill} />
                                         ))}
                                     </Bar>
                                 </BarChart>
