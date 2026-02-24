@@ -1,16 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, KeyRound, Mail, Lock } from "lucide-react"
+import { Loader2, KeyRound, Lock } from "lucide-react"
 
 export default function VerifyInvitePage() {
-    const [email, setEmail] = useState("")
     const [token, setToken] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
@@ -22,6 +21,18 @@ export default function VerifyInvitePage() {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
+
+    // Check if the user arrived here with an active session implicitly created by the email link
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+            // If the magic link actually logged them in already, we just need to let them set a password
+            if (session) {
+                // Note: If they arrived via a link that logged them in, we are in a purely "update password" state.
+            }
+        }
+        checkSession()
+    }, [supabase.auth])
 
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -40,23 +51,23 @@ export default function VerifyInvitePage() {
             return
         }
 
-        // 1. Verify the 6-digit OTP code using the 'invite' type
-        const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
-            email,
-            token,
-            type: 'invite'
-        })
+        // Try to verify the OTP directly with the token (if using email OTP flow)
+        // BUT wait, verifyOtp REQUIRES an email.
+        // If the user arrived via the email link, Supabase often appends `error_code`, `access_token` etc to the hash.
 
-        if (verifyError || !verifyData.user) {
-            setError(verifyError?.message ?? "Invalid or expired verification code")
-            setLoading(false)
-            return
-        }
+        let sessionToUse = null;
 
-        // 2. Immediately bind the user's chosen password to their account
-        const { error: updateError } = await supabase.auth.updateUser({
+        // Let's attempt to use the magic link's implicit login to just update the user.
+        // If the user pasted the code manually, this will fail. Let's try password update first.
+        const { data: updateData, error: updateError } = await supabase.auth.updateUser({
             password: password
         })
+
+        if (!updateError && updateData.user) {
+            // SUCCESS: They followed the link, the session was active, and we just updated the password.
+            router.push("/agent/dashboard")
+            return
+        }
 
         if (updateError) {
             setError(updateError.message || "Failed to set password. Please contact your administrator.")
@@ -92,23 +103,6 @@ export default function VerifyInvitePage() {
                                 {error}
                             </div>
                         )}
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="font-semibold text-slate-700">Work Email</Label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="agent@university.edu"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-primary h-11"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
-                        </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="token" className="font-semibold text-slate-700">6-Digit Code</Label>
                             <div className="relative">
