@@ -81,11 +81,12 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
             if (uni?.name) setUniName(uni.name)
 
             // Fetch logo from settings.branding
-            const { data: settings } = await supabase
+            const { data } = await supabase
                 .from("settings")
                 .select("branding")
                 .eq("university_id", profile.university_id)
-                .maybeSingle()
+                .limit(1)
+            const settings = data?.[0]
             if (settings?.branding?.logo_url) setLogoUrl(settings.branding.logo_url)
             if (settings?.branding?.logo_size) setLogoSize(settings.branding.logo_size)
             if (settings?.branding?.logo_position) setLogoPosition(settings.branding.logo_position)

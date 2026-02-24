@@ -39,8 +39,8 @@ export default function AgentSettingsPage() {
                 setLastName(prof.last_name || "")
             }
             if (prof?.university_id) {
-                const { data: settings } = await supabase.from("settings").select("allow_agent_custom_sender_email, communication").eq("university_id", prof.university_id).maybeSingle()
-                setUniversitySettings(settings)
+                const { data } = await supabase.from("settings").select("allow_agent_custom_sender_email, communication").eq("university_id", prof.university_id).limit(1)
+                setUniversitySettings(data?.[0] || null)
             }
             setLoading(false)
         }

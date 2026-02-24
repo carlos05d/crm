@@ -55,11 +55,12 @@ export default function BrandingSettingsPage() {
             setUniversityId(profile.university_id)
 
             // Load settings (colors + agent policy)
-            const { data: settings } = await supabase
+            const { data } = await supabase
                 .from("settings")
                 .select("branding, agent_scope, allow_agent_custom_sender_email")
                 .eq("university_id", profile.university_id)
-                .maybeSingle()
+                .limit(1)
+            const settings = data?.[0]
 
             if (settings) {
                 setPrimaryColor(settings.branding?.colors?.primary ?? "#1E3A5F")
