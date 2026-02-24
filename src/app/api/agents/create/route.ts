@@ -74,7 +74,7 @@ export async function POST(req: Request) {
 
         if (mode === 'invite') {
             const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email.trim(), {
-                redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('.supabase.co', '')}/agent/dashboard`,
+                redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://mustaphakharacha.bilaldemenagement.com'}/agent/dashboard`,
                 data: { name: name.trim() }
             });
             newUserData = data;
