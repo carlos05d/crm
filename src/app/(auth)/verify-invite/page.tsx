@@ -86,7 +86,7 @@ export default function VerifyInvitePage() {
                     <KeyRound className="h-6 w-6 text-white" />
                 </div>
                 <h1 className="text-3xl font-heading font-bold text-slate-900 tracking-tight">Complete Setup</h1>
-                <p className="text-slate-500 mt-2 font-sans">Enter the 6-digit code sent to your email to configure your account.</p>
+                <p className="text-slate-500 mt-2 font-sans">Enter the authorization code sent to your email to configure your account.</p>
             </div>
 
             <Card className="w-full max-w-md shadow-xl border-slate-200/60 rounded-2xl">
@@ -104,17 +104,17 @@ export default function VerifyInvitePage() {
                             </div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="token" className="font-semibold text-slate-700">6-Digit Code</Label>
+                            <Label htmlFor="token" className="font-semibold text-slate-700">Authorization Code</Label>
                             <div className="relative">
                                 <KeyRound className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                                 <Input
                                     id="token"
                                     type="text"
-                                    placeholder="123456"
+                                    placeholder="8-digit code"
                                     value={token}
                                     onChange={(e) => setToken(e.target.value)}
                                     className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-primary h-11 tracking-widest font-mono text-center text-lg"
-                                    maxLength={6}
+                                    maxLength={8}
                                     required
                                     disabled={loading}
                                 />
