@@ -66,7 +66,7 @@ export default function CommunicationCenterPage() {
                 .select('id, channel, recipient, subject, body, status, created_at, leads(first_name, last_name)')
                 .order('created_at', { ascending: false })
                 .limit(50)
-            setMessages((data as Message[]) || [])
+            setMessages((data as any as Message[]) || [])
         } catch {
             // silently fail — page still shows
         } finally {

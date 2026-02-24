@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { leadId: string } }
+    { params }: { params: Promise<{ leadId: string }> }
 ) {
     try {
         const supabaseUser = await createServerClient()
@@ -38,7 +38,7 @@ export async function POST(
         const { agentId } = body
         if (!agentId) return NextResponse.json({ error: 'Missing agentId' }, { status: 400 })
 
-        const leadId = params.leadId
+        const { leadId } = await params
 
         // Validate lead belongs to admin's university
         const { data: lead } = await supabaseAdmin

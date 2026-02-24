@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, Suspense } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -44,7 +44,7 @@ const PLANS = [
     },
 ]
 
-export default function BillingPage() {
+function BillingContent() {
     const [loading, setLoading] = useState<string | null>(null)
     const params = useSearchParams()
     const success = params.get('success')
@@ -136,5 +136,13 @@ export default function BillingPage() {
                 ))}
             </div>
         </div>
+    )
+}
+
+export default function BillingPage() {
+    return (
+        <Suspense fallback={<div className="flex h-48 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <BillingContent />
+        </Suspense>
     )
 }

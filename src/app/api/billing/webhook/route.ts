@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2024-04-10',
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'dummy', {
+    apiVersion: '2026-01-28.clover', // Update to match the installed @types/stripe requirement
 })
 
 // Stripe requires raw body for signature verification
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
                     stripe_price_id: sub.items.data[0]?.price.id,
                     plan_type: plan,
                     status: 'active',
-                    subscription_current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+                    subscription_current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
                 }).eq('id', uniId)
             }
             break
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
             if (unis) {
                 await supabaseAdmin.from('universities').update({
                     status: sub.status === 'active' ? 'active' : 'suspended',
-                    subscription_current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+                    subscription_current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
                 }).eq('id', unis.id)
             }
             break

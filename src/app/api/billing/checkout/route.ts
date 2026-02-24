@@ -5,8 +5,8 @@ import { createClient as createServerClient } from '@/utils/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2024-04-10',
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'dummy', {
+    apiVersion: '2026-01-28.clover', // Update to match the installed @types/stripe requirement
 })
 
 // Map plan names to Stripe Price IDs (set these in your Stripe dashboard)

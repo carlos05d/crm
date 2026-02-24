@@ -41,7 +41,7 @@ export async function GET(req: Request) {
 
         // Leads by stage
         const stageCounts: Record<string, number> = {}
-        leads?.forEach(l => {
+        leads?.forEach((l: any) => {
             const name = (l.kanban_stages as any)?.name || 'Unassigned'
             stageCounts[name] = (stageCounts[name] || 0) + 1
         })
@@ -49,7 +49,7 @@ export async function GET(req: Request) {
 
         // Score distribution
         const scoreBuckets = { '0-25': 0, '26-50': 0, '51-75': 0, '76-100': 0 }
-        leads?.forEach(l => {
+        leads?.forEach((l: any) => {
             const s = l.score || 0
             if (s <= 25) scoreBuckets['0-25']++
             else if (s <= 50) scoreBuckets['26-50']++
@@ -60,14 +60,14 @@ export async function GET(req: Request) {
 
         // Leads per agent
         const agentCounts: Record<string, number> = {}
-        leads?.forEach(l => {
+        leads?.forEach((l: any) => {
             const agentId = l.assigned_agent_id || 'Unassigned'
             agentCounts[agentId] = (agentCounts[agentId] || 0) + 1
         })
 
         // Leads created per day (last 30 days)
         const leadsByDay: Record<string, number> = {}
-        leads?.forEach(l => {
+        leads?.forEach((l: any) => {
             const day = new Date(l.created_at).toLocaleDateString()
             leadsByDay[day] = (leadsByDay[day] || 0) + 1
         })
@@ -75,7 +75,7 @@ export async function GET(req: Request) {
 
         // Conversion rate for this university
         const totalLeads = leads?.length || 0
-        const admitted = leads?.filter(l => (l.kanban_stages as any)?.name === 'Admitted').length || 0
+        const admitted = leads?.filter((l: any) => (l.kanban_stages as any)?.name === 'Admitted').length || 0
         const conversionRate = totalLeads > 0 ? Math.round((admitted / totalLeads) * 100) : 0
 
         return NextResponse.json({

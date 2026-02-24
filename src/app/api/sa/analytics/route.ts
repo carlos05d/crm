@@ -45,7 +45,7 @@ export async function GET(req: Request) {
 
         // Aggregate leads by stage name
         const stageCounts: Record<string, number> = {}
-        leads?.forEach(l => {
+        leads?.forEach((l: any) => {
             const stageName = (l.kanban_stages as any)?.name || 'Unassigned'
             stageCounts[stageName] = (stageCounts[stageName] || 0) + 1
         })
@@ -55,7 +55,7 @@ export async function GET(req: Request) {
 
         // Universities created per month
         const uniByMonth: Record<string, number> = {}
-        universities?.forEach(u => {
+        universities?.forEach((u: any) => {
             const month = new Date(u.created_at).toLocaleString('default', { month: 'short', year: '2-digit' })
             uniByMonth[month] = (uniByMonth[month] || 0) + 1
         })
@@ -63,7 +63,7 @@ export async function GET(req: Request) {
 
         // Score distribution
         const scoreBuckets = { '0-25': 0, '26-50': 0, '51-75': 0, '76-100': 0 }
-        leads?.forEach(l => {
+        leads?.forEach((l: any) => {
             const s = l.score || 0
             if (s <= 25) scoreBuckets['0-25']++
             else if (s <= 50) scoreBuckets['26-50']++
@@ -74,7 +74,7 @@ export async function GET(req: Request) {
 
         // Plan distribution
         const planCounts: Record<string, number> = {}
-        universities?.forEach(u => {
+        universities?.forEach((u: any) => {
             const plan = u.plan_type || 'basic'
             planCounts[plan] = (planCounts[plan] || 0) + 1
         })
@@ -82,7 +82,7 @@ export async function GET(req: Request) {
 
         // Conversion rate (Admitted / total leads)
         const totalLeads = leads?.length || 0
-        const admittedLeads = leads?.filter(l => (l.kanban_stages as any)?.name === 'Admitted').length || 0
+        const admittedLeads = leads?.filter((l: any) => (l.kanban_stages as any)?.name === 'Admitted').length || 0
         const conversionRate = totalLeads > 0 ? Math.round((admittedLeads / totalLeads) * 100) : 0
 
         return NextResponse.json({

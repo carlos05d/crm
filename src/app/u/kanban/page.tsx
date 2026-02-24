@@ -122,7 +122,7 @@ export default function UniversityKanbanPage() {
     const filteredLeads = useMemo(() => {
         return leads.filter(l => {
             if (filterAgent !== "all" && l.assigned_agent_id !== filterAgent) return false
-            if (filterProgram !== "all" && !(l.programs as any)?.id === filterProgram) return false
+            if (filterProgram !== "all" && (l.programs as any)?.id !== filterProgram) return false
             return true
         })
     }, [leads, filterAgent, filterProgram])
