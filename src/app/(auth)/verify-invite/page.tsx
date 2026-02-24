@@ -122,23 +122,6 @@ export default function VerifyInvitePage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="email" className="font-semibold text-slate-700">Work Email</Label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="agent@university.edu"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-primary h-11"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
                             <Label htmlFor="token" className="font-semibold text-slate-700">Authorization Code</Label>
                             <div className="relative">
                                 <KeyRound className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
