@@ -15,7 +15,9 @@ export default function VerifyInvitePage() {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [loading, setLoading] = useState(false)
+    const [isResending, setIsResending] = useState(false)
     const [error, setError] = useState("")
+    const [resendMessage, setResendMessage] = useState("")
     const router = useRouter()
 
     const supabase = createBrowserClient(
@@ -80,6 +82,36 @@ export default function VerifyInvitePage() {
         router.push("/agent/dashboard")
     }
 
+    const handleResendCode = async () => {
+        if (!email) {
+            setError("Please enter your Work Email first to resend the code.")
+            setResendMessage("")
+            return
+        }
+
+        setIsResending(true)
+        setError("")
+        setResendMessage("")
+
+        try {
+            const res = await fetch("/api/auth/resend-invite", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email })
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) throw new Error(data.error || "Failed to resend code")
+
+            setResendMessage("A new authorization code has been sent to your email!")
+        } catch (err: any) {
+            setError(err.message || "An error occurred while resending the code.")
+        } finally {
+            setIsResending(false)
+        }
+    }
+
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
             <div className="mb-8 text-center">
@@ -102,6 +134,11 @@ export default function VerifyInvitePage() {
                         {error && (
                             <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg font-medium text-center">
                                 {error}
+                            </div>
+                        )}
+                        {resendMessage && (
+                            <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg font-medium text-center">
+                                {resendMessage}
                             </div>
                         )}
                         <div className="space-y-2">
@@ -175,14 +212,24 @@ export default function VerifyInvitePage() {
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="pb-6">
+                    <CardFooter className="pb-6 flex-col space-y-3">
                         <Button
                             type="submit"
                             className="w-full text-base font-semibold h-11 rounded-lg shadow-sm"
-                            disabled={loading}
+                            disabled={loading || isResending}
                         >
                             {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                             {loading ? "Verifying..." : "Complete Setup"}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="w-full text-slate-500 hover:text-slate-900"
+                            onClick={handleResendCode}
+                            disabled={loading || isResending}
+                        >
+                            {isResending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {isResending ? "Sending..." : "Didn't receive code? Resend"}
                         </Button>
                     </CardFooter>
                 </form>
