@@ -1,0 +1,184 @@
+"use client"
+
+import { useState } from "react"
+import { createBrowserClient } from "@supabase/ssr"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Loader2, KeyRound, Mail, Lock } from "lucide-react"
+
+export default function VerifyInvitePage() {
+    const [email, setEmail] = useState("")
+    const [token, setToken] = useState("")
+    const [password, setPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState("")
+    const router = useRouter()
+
+    const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    const handleVerify = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+        setError("")
+
+        if (password.length < 6) {
+            setError("Password must be at least 6 characters")
+            setLoading(false)
+            return
+        }
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match")
+            setLoading(false)
+            return
+        }
+
+        // 1. Verify the 6-digit OTP code using the 'invite' type
+        const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+            email,
+            token,
+            type: 'invite'
+        })
+
+        if (verifyError || !verifyData.user) {
+            setError(verifyError?.message ?? "Invalid or expired verification code")
+            setLoading(false)
+            return
+        }
+
+        // 2. Immediately bind the user's chosen password to their account
+        const { error: updateError } = await supabase.auth.updateUser({
+            password: password
+        })
+
+        if (updateError) {
+            setError(updateError.message || "Failed to set password. Please contact your administrator.")
+            setLoading(false)
+            return
+        }
+
+        // 3. Password successfully set, redirect to their new dashboard
+        router.push("/agent/dashboard")
+    }
+
+    return (
+        <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
+            <div className="mb-8 text-center">
+                <div className="h-12 w-12 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                    <KeyRound className="h-6 w-6 text-white" />
+                </div>
+                <h1 className="text-3xl font-heading font-bold text-slate-900 tracking-tight">Complete Setup</h1>
+                <p className="text-slate-500 mt-2 font-sans">Enter the 6-digit code sent to your email to configure your account.</p>
+            </div>
+
+            <Card className="w-full max-w-md shadow-xl border-slate-200/60 rounded-2xl">
+                <form onSubmit={handleVerify}>
+                    <CardHeader className="space-y-1 pb-4">
+                        <CardTitle className="text-xl font-heading text-center">Verify Invitation</CardTitle>
+                        <CardDescription className="text-center font-sans">
+                            Create your password to access the CRM portal
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 font-sans">
+                        {error && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg font-medium text-center">
+                                {error}
+                            </div>
+                        )}
+                        <div className="space-y-2">
+                            <Label htmlFor="email" className="font-semibold text-slate-700">Work Email</Label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="agent@university.edu"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-primary h-11"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="token" className="font-semibold text-slate-700">6-Digit Code</Label>
+                            <div className="relative">
+                                <KeyRound className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Input
+                                    id="token"
+                                    type="text"
+                                    placeholder="123456"
+                                    value={token}
+                                    onChange={(e) => setToken(e.target.value)}
+                                    className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-primary h-11 tracking-widest font-mono text-center text-lg"
+                                    maxLength={6}
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2 pt-2">
+                            <Label htmlFor="password" className="font-semibold text-slate-700">Create Password</Label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-primary h-11"
+                                    required
+                                    disabled={loading}
+                                    minLength={6}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="confirmPassword" className="font-semibold text-slate-700">Confirm Password</Label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Input
+                                    id="confirmPassword"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-primary h-11"
+                                    required
+                                    disabled={loading}
+                                    minLength={6}
+                                />
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="pb-6">
+                        <Button
+                            type="submit"
+                            className="w-full text-base font-semibold h-11 rounded-lg shadow-sm"
+                            disabled={loading}
+                        >
+                            {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                            {loading ? "Verifying..." : "Complete Setup"}
+                        </Button>
+                    </CardFooter>
+                </form>
+            </Card>
+
+            <p className="mt-8 text-sm text-slate-400 font-sans">
+                Securely powered by Portal Access Authentication
+            </p>
+        </div>
+    )
+}
